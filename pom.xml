@@ -29,7 +29,7 @@
     <artifactId>org.wso2.carbon.cluster.coordinator.parent</artifactId>
     <packaging>pom</packaging>
     <version>1.0.0-SNAPSHOT</version>
-    <name>WSO2 Carbon Analytics - Parent</name>
+    <name>WSO2 Carbon Coordination - Parent</name>
 
     <modules>
         <module>components/cluster-coordinator</module>
@@ -37,9 +37,9 @@
      </modules>
 
     <scm>
-        <url>https://github.com/wso2/carbon-coordinator.git</url>
-        <developerConnection>scm:git:https://github.com/wso2/carbon-coordinator.git</developerConnection>
-        <connection>scm:git:https://github.com/wso2/carbon-coordinator.git</connection>
+        <url>https://github.com/wso2/carbon-coordination.git</url>
+        <developerConnection>scm:git:https://github.com/wso2/carbon-coordination.git</developerConnection>
+        <connection>scm:git:https://github.com/wso2/carbon-coordination.git</connection>
         <tag>HEAD</tag>
     </scm>
 
@@ -270,6 +270,7 @@
 
         <maven.src.version>1.21.0</maven.src.version>
         <carbon.feature.plugin.version>3.0.0</carbon.feature.plugin.version>
+        <maven.findbugsplugin.version.exclude>findbugs-exclude.xml</maven.findbugsplugin.version.exclude>
 
         <carbon.kernel.version>4.4.16</carbon.kernel.version>
         <carbon.datasources.version>1.1.0</carbon.datasources.version>
