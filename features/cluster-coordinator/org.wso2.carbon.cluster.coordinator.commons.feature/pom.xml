@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>org.wso2.carbon.cluster.coordinator.commons.feature</artifactId>
     <packaging>carbon-feature</packaging>
-    <name>WSO2-cluster-coorinator-commons-feature</name>
+    <name>WSO2-cluster-coordinator-commons-feature</name>
 
     <dependencies>
         <dependency>
