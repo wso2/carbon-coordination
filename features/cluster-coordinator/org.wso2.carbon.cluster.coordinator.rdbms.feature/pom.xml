@@ -12,7 +12,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>org.wso2.carbon.cluster.coordinator.rdbms.feature</artifactId>
     <packaging>carbon-feature</packaging>
-    <name>WSO2-cluster-coorinator-rdbms-feature</name>
+    <name>WSO2-cluster-coordinator-rdbms-feature</name>
 
     <dependencies>
         <dependency>
