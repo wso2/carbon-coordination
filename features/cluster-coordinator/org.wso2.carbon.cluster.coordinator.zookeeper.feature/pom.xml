@@ -37,7 +37,7 @@
                                 <artifactItem>
                                     <groupId>org.wso2.carbon.coordination</groupId>
                                     <artifactId>org.wso2.carbon.cluster.coordinator.zookeeper</artifactId>
-                                    <version>1.0.0-SNAPSHOT</version>
+                                    <version>${project.parent.version}</version>
                                     <type>bundle</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/docs</outputDirectory>
