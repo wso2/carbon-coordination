@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>org.wso2.carbon.cluster.coordinator.service</artifactId>
-    <name>WSO2-cluster-coorinator-service</name>
+    <name>WSO2-cluster-coordinator-service</name>
     <packaging>bundle</packaging>
     <dependencies>
         <dependency>
