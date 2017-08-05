@@ -59,7 +59,15 @@
                 <plugin>
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-scr-plugin</artifactId>
-                    <version>${maven.src.version}</version>
+                    <version>${maven.scr.version}</version>
+                    <executions>
+                        <execution>
+                            <id>generate-scr-scrdescriptor</id>
+                            <goals>
+                                <goal>scr</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin><!-- Overridden from parent pom to exclude generated sources -->
                     <groupId>org.codehaus.mojo</groupId>
@@ -182,22 +190,22 @@
             <dependency>
                 <groupId>org.wso2.carbon.coordination</groupId>
                 <artifactId>org.wso2.carbon.cluster.coordinator.commons</artifactId>
-                <version>${org.wso2.carbon.coordinator.version}</version>
+                <version>${carbon.coordination.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.coordination</groupId>
                 <artifactId>org.wso2.carbon.cluster.coordinator.rdbms</artifactId>
-                <version>${org.wso2.carbon.coordinator.version}</version>
+                <version>${carbon.coordination.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.coordination</groupId>
                 <artifactId>org.wso2.carbon.cluster.coordinator.service</artifactId>
-                <version>${org.wso2.carbon.coordinator.version}</version>
+                <version>${carbon.coordination.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.coordination</groupId>
                 <artifactId>org.wso2.carbon.cluster.coordinator.zookeeper</artifactId>
-                <version>${org.wso2.carbon.coordinator.version}</version>
+                <version>${carbon.coordination.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wso2.orbit.org.yaml</groupId>
@@ -260,21 +268,25 @@
     </dependencyManagement>
 
     <properties>
-        <org.wso2.carbon.coordinator.version>1.0.1-SNAPSHOT</org.wso2.carbon.coordinator.version>
+        <carbon.coordination.version>1.0.1-SNAPSHOT</carbon.coordination.version>
+        <carbon.coordination.exp.package.version>${carbon.coordination.version}</carbon.coordination.exp.package.version>
 
         <curator.framework.version>2.6.0</curator.framework.version>
         <apache.zookeeper.version>3.4.6</apache.zookeeper.version>
+        <zookeeper.imp.package.version>[3.4,4.0)</zookeeper.imp.package.version>
         <curator.recipies.version>2.6.0</curator.recipies.version>
         <org.snakeyaml.version>1.16.0.wso2v1</org.snakeyaml.version>
 
-        <maven.src.version>1.21.0</maven.src.version>
+        <maven.scr.version>1.7.2</maven.scr.version>
         <carbon.feature.plugin.version>3.0.0</carbon.feature.plugin.version>
         <maven.findbugsplugin.version.exclude>findbugs-exclude.xml</maven.findbugsplugin.version.exclude>
 
         <carbon.kernel.version>4.4.16</carbon.kernel.version>
         <carbon.datasources.version>1.1.0</carbon.datasources.version>
         <commons.logging.version>1.2</commons.logging.version>
-        <guava.version>20.0</guava.version>
+        <commons.logging.imp.package.version>[1.2,2.0)</commons.logging.imp.package.version>
+        <guava.version>19.0</guava.version>
+        <guava.imp.package.version>[19.0,20.0)</guava.imp.package.version>
         <com.h2database.version>1.4.187</com.h2database.version>
         <org.testing.version>6.9.10</org.testing.version>
 
