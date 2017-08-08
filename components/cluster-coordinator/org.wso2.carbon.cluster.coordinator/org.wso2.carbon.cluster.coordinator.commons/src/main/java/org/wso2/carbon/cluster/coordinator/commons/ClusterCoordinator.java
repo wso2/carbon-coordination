@@ -15,7 +15,6 @@
 
 package org.wso2.carbon.cluster.coordinator.commons;
 
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
 import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationStrategyConfiguration;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
@@ -42,13 +41,7 @@ public class ClusterCoordinator {
         try {
             this.coordinationStrategy = (CoordinationStrategy) classLoader
                     .loadClass(coordinationStrategyConfiguration.getConfiguration()).newInstance();
-        } catch (ClassNotFoundException e) {
-            throw new ClusterCoordinationException("Error when initializing coordinator strategy",
-                    e);
-        } catch (InstantiationException e) {
-            throw new ClusterCoordinationException("Error when initializing coordinator strategy",
-                    e);
-        } catch (IllegalAccessException e) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new ClusterCoordinationException("Error when initializing coordinator strategy",
                     e);
         }

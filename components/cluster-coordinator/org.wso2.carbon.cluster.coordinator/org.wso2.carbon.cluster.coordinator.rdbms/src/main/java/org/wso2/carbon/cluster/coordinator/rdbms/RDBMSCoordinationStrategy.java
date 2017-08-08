@@ -26,7 +26,6 @@ import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordination
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
 
-import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +34,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import javax.sql.DataSource;
 
 /**
  * This class controls the overall process of RDBMS coordination.
@@ -67,6 +67,22 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
     private RDBMSCommunicationBusContextImpl communicationBusContext;
 
     private String localNodeId;
+
+    /**
+     * Possible node states
+     *
+     *               +----------+
+     *     +-------->+ Election +<---------+
+     *     |         +----------+          |
+     *     |            |    |             |
+     *     |            |    |             |
+     *  +-----------+   |    |   +-------------+
+     *  |   MEMBER  +<--+    +-->+ Coordinator |
+     *  +-----------+            +-------------+
+     */
+    private enum NodeState {
+        COORDINATOR, MEMBER, ELECTION
+    }
 
     public RDBMSCoordinationStrategy() {
         ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
@@ -117,12 +133,13 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
     }
 
     @Override public void joinGroup(String groupId, Map<String, Object> propertiesMap) {
+        //clear old membership events for the node
+        communicationBusContext.clearMembershipEvents(localNodeId, groupId);
+
         CoordinatorElectionTask coordinatorElectionTask = new CoordinatorElectionTask(localNodeId,
                 groupId, propertiesMap);
         threadExecutor.scheduleWithFixedDelay(coordinatorElectionTask, heartBeatInterval,
                 heartBeatInterval, TimeUnit.MILLISECONDS);
-        //clear old membership events for the node
-        communicationBusContext.clearMembershipEvents(localNodeId, groupId);
     }
 
     public String generateRandomId() {
@@ -137,22 +154,6 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
     public void stop() {
         this.threadExecutor.shutdown();
         this.rdbmsMemberEventProcessor.stop();
-    }
-
-    /**
-     * Possible node states
-     * <p>
-     * +----------+
-     * +-------->+ Election +<---------+
-     * |         +----------+          |
-     * |            |    |             |
-     * |            |    |             |
-     * +-----------+   |    |   +-------------+
-     * | Candidate +<--+    +-->+ Coordinator |
-     * +-----------+            +-------------+
-     */
-    private enum NodeState {
-        COORDINATOR, MEMBER
     }
 
     /**
@@ -189,13 +190,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             this.localGroupId = groupId;
             this.localNodeId = nodeId;
             this.localpropertiesMap = propertiesMap;
-            this.currentNodeState = NodeState.MEMBER;
-            try {
-                communicationBusContext.clearMembershipEvents(nodeId, groupId);
-            } catch (ClusterCoordinationException e) {
-                logger.warn("Error while clearing old membership events for local node (" + nodeId
-                        + ") and group (" + groupId + ")", e);
-            }
+            this.currentNodeState = NodeState.ELECTION;
         }
 
         @Override public void run() {
@@ -204,12 +199,15 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                     logger.debug("Current node state: " + currentNodeState);
                 }
                 switch (currentNodeState) {
-                case MEMBER:
-                    performMemberTask();
-                    break;
-                case COORDINATOR:
-                    performCoordinatorTask();
-                    break;
+                    case MEMBER:
+                        performMemberTask();
+                        break;
+                    case COORDINATOR:
+                        performCoordinatorTask();
+                        break;
+                    case ELECTION:
+                        performElectionTask();
+                        break;
                 }
             } catch (Throwable e) {
                 logger.error("Error detected while running coordination algorithm. Node became a "
@@ -236,7 +234,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                             + localGroupId);
                 }
                 communicationBusContext.removeCoordinator(localGroupId, heartbeatMaxAge);
-                performElectionTask();
+                currentNodeState = NodeState.ELECTION;
             }
         }
 
@@ -278,7 +276,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                     logger.debug("Going for election since Coordinator state is lost in group"
                             + localGroupId);
                 }
-                performElectionTask();
+                currentNodeState = NodeState.ELECTION;
             }
         }
 
