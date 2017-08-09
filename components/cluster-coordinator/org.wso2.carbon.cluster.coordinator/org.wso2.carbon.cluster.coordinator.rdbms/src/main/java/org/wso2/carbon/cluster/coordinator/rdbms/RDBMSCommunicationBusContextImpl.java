@@ -17,18 +17,15 @@ package org.wso2.carbon.cluster.coordinator.rdbms;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
+import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationStrategyConfiguration;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.commons.util.CommunicationBusContext;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEvent;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
-import org.wso2.carbon.cluster.coordinator.rdbms.internal.ds.RDBMSClusterCoordinatorServiceHolder;
 import org.wso2.carbon.cluster.coordinator.rdbms.util.RDBMSConstants;
-import org.wso2.carbon.datasource.core.api.DataSourceService;
-import org.wso2.carbon.datasource.core.beans.CarbonDataSource;
-import org.wso2.carbon.datasource.core.exception.DataSourceException;
 
-import javax.sql.DataSource;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -43,11 +40,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.naming.ConfigurationException;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
+
 /**
  * The RDBMS based communication bus layer for the nodes. This layer handles the database level calls.
  */
 public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext {
-    private static final Log log = LogFactory.getLog(RDBMSCommunicationBusContextImpl.class);
     /**
      * The logger class
      */
@@ -57,24 +58,30 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
      */
     private DataSource datasource;
 
+    /**
+     * Constructor which looks up DataSource as configured in master-datasources.xml.
+     */
     public RDBMSCommunicationBusContextImpl() {
-
-        DataSourceService dataSourceService = RDBMSClusterCoordinatorServiceHolder
-                .getDataSourceService();
-        CarbonDataSource carbonDataSource = null;
+        String jndiLookupName = "";
         try {
-            Object datasource = dataSourceService.getDataSource("datasourceName");
-            if (datasource instanceof CarbonDataSource) {
-                carbonDataSource = (CarbonDataSource) dataSourceService
-                        .getDataSource("datasourceName");
-                this.datasource = (DataSource) carbonDataSource.getDataSourceObject();
+            if (CoordinationStrategyConfiguration.getInstance().getDataSourceConfigs() != null) {
+                jndiLookupName = CoordinationStrategyConfiguration.getInstance().getDataSourceConfigs()
+                        .get(CoordinationPropertyNames.DATASOURCE_CONFIG_NAME);
+                datasource = InitialContext.doLookup(jndiLookupName);
+                logger.info("DataSource looked up for JNDI config " + jndiLookupName);
+            } else {
+                throw new ConfigurationException("DataSource configuration not found ");
             }
-        } catch (DataSourceException e) {
-            throw new ClusterCoordinationException("Error in initializing the datasource", e);
+        } catch (NamingException e) {
+            throw new ClusterCoordinationException("JNDI lookup failed for " + jndiLookupName, e);
         }
         createTables();
     }
 
+    /**
+     * Constructor which uses a specified DataSource.
+     * @param dataSource the DataSource to be used
+     */
     public RDBMSCommunicationBusContextImpl(DataSource dataSource) {
         this.datasource = dataSource;
         createTables();
