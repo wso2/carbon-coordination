@@ -24,6 +24,7 @@ import org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBaseTest {
     RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeOne;
@@ -156,6 +157,8 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
         boolean coordinatorChanged = false;
         count = 0;
 
+        // Wait for cluster to stabilize
+        TimeUnit.SECONDS.sleep(1);
         rdbmsCoordinationStrategyNodeOne.stop();
 
         while (count < 10) {
