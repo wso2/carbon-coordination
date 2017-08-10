@@ -22,7 +22,6 @@ import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordination
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEvent;
 
-import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,21 +47,10 @@ class RDBMSMemberEventListenerTask implements Runnable {
      */
     private List<MemberEventListener> listeners;
 
-    /**
-     * Default Constructor.
-     *
-     * @param nodeId Local node ID used to uniquely identify the node within cluster
-     */
-    RDBMSMemberEventListenerTask(String nodeId) {
+    public RDBMSMemberEventListenerTask(String nodeId, RDBMSCommunicationBusContextImpl communicationBusContext) {
         this.nodeID = nodeId;
-        this.listeners = new ArrayList<MemberEventListener>();
-        this.communicationBusContext = new RDBMSCommunicationBusContextImpl();
-    }
-
-    RDBMSMemberEventListenerTask(String nodeId, DataSource dataSource) {
-        this.nodeID = nodeId;
-        this.listeners = new ArrayList<MemberEventListener>();
-        this.communicationBusContext = new RDBMSCommunicationBusContextImpl(dataSource);
+        this.listeners = new ArrayList<>();
+        this.communicationBusContext = communicationBusContext;
     }
 
     /**
