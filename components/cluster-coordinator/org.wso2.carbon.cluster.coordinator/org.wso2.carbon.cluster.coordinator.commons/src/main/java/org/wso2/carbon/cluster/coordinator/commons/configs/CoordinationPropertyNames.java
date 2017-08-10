@@ -46,6 +46,11 @@ public class CoordinationPropertyNames {
     public static final String ZOOKEEPER_CONNECTION_STRING = "connectionString";
 
     /**
+     * RDBMS coordination DataSource property name.
+     */
+    public static final String DATASOURCE_CONFIG_NAME = "dataSource";
+
+    /**
      * This class does not need to be instantiated as all the variables are static and public.
      */
     private CoordinationPropertyNames() {

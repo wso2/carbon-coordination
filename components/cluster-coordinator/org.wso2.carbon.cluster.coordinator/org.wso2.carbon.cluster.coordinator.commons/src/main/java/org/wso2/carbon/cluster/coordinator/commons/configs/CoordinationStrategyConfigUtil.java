@@ -22,9 +22,41 @@ import java.util.Map;
  */
 public class CoordinationStrategyConfigUtil {
 
+    /**
+     * Variable to hold DataSource configurations.
+     */
+    private Map<String, String> dataSourceConfig;
+
+    /**
+     * Variable to hold RDBMS based coordination configurations.
+     */
     private Map<String, Integer> rdbmsConfig;
+
+    /**
+     * Variable to hold Zookeeper based coordination configurations.
+     */
     private Map<String, String> zookeeperConfig;
+
+    /**
+     * Variable to hold the coordination strategy.
+     */
     private String strategy;
+
+    /**
+     * Method to retrieve DataSource configurations specified in coordinatorConfig.yaml file.
+     * @return  map of DataSource configurations
+     */
+    public Map<String, String> getDataSourceConfig() {
+        return this.dataSourceConfig;
+    }
+
+    /**
+     * Method to set the DataSource configurations.
+     * @param dataSourceConfig map of DataSource configurations to be set
+     */
+    public void setDataSourceConfig(Map<String, String> dataSourceConfig) {
+        this.dataSourceConfig = dataSourceConfig;
+    }
 
     public Map<String, Integer> getRdbmsConfig() {
         return this.rdbmsConfig;

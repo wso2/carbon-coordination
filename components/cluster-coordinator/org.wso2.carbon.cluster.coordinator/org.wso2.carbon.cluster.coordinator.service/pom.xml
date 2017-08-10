@@ -25,10 +25,6 @@
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon.datasources</groupId>
-            <artifactId>org.wso2.carbon.datasource.core</artifactId>
-        </dependency>
     </dependencies>
     <build>
         <plugins>
