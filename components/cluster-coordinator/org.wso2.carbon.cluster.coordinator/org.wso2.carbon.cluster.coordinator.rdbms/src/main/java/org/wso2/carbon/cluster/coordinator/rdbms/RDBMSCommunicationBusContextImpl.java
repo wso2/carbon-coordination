@@ -37,6 +37,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -594,17 +595,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                 if (coordinatorNodeId != null) {
                     isCoordinatorNode = coordinatorNodeId.equals(nodeId);
                 }
-                Map<String, Object> propertiesMap = null;
-                if (resultSet.getBlob(3) != null) {
-                    int blobLength = (int) resultSet.getBlob(3).length();
-                    byte[] bytes = resultSet.getBlob(3).getBytes(0L, blobLength);
-                    ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-                    ObjectInputStream ois = new ObjectInputStream(bis);
-                    Object blobObject = ois.readObject();
-                    if (blobObject instanceof Map) {
-                        propertiesMap = (Map) blobObject;
-                    }
-                }
+                Map<String, Object> propertiesMap = retrievePropertiesMap(resultSet);
                 long lastHeartbeat = resultSet.getLong(4);
                 boolean isNewNode = convertIntToBoolean(resultSet.getInt(5));
                 NodeDetail heartBeatData = new NodeDetail(nodeId, groupId, isCoordinatorNode,
@@ -615,10 +606,6 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         } catch (SQLException e) {
             String errMsg = RDBMSConstants.TASK_GET_ALL_QUEUES;
             throw new ClusterCoordinationException("Error occurred while " + errMsg, e);
-        } catch (IOException e) {
-            throw new ClusterCoordinationException("Error retrieving the property map. ", e);
-        } catch (ClassNotFoundException e) {
-            throw new ClusterCoordinationException("Error retrieving the property map. ", e);
         } finally {
             close(resultSet, RDBMSConstants.TASK_GET_ALL_QUEUES);
             close(preparedStatement, RDBMSConstants.TASK_GET_ALL_QUEUES);
@@ -695,19 +682,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             preparedStatement.setString(1, groupId);
             preparedStatement.setString(2, nodeId);
             resultSet = preparedStatement.executeQuery();
-            Map<String, Object> propertiesMap = null;
             if (resultSet.next()) {
                 boolean isCoordinatorNode = coordinatorNodeId.equals(nodeId);
-                if (resultSet.getBlob(3) != null) {
-                    int blobLength = (int) resultSet.getBlob(3).length();
-                    byte[] bytes = resultSet.getBlob(3).getBytes(0L, blobLength);
-                    ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-                    ObjectInputStream ois = new ObjectInputStream(bis);
-                    Object blobObject = ois.readObject();
-                    if (blobObject instanceof Map) {
-                        propertiesMap = (Map) blobObject;
-                    }
-                }
+                Map<String, Object> propertiesMap = retrievePropertiesMap(resultSet);
                 long lastHeartbeat = resultSet.getLong(4);
                 boolean isNewNode = convertIntToBoolean(resultSet.getInt(5));
                 nodeDetail = new NodeDetail(nodeId, groupId, isCoordinatorNode, lastHeartbeat,
@@ -717,16 +694,38 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         } catch (SQLException e) {
             String errMsg = RDBMSConstants.TASK_GET_ALL_QUEUES;
             throw new ClusterCoordinationException("Error occurred while " + errMsg, e);
-        } catch (IOException e) {
-            throw new ClusterCoordinationException("Error retrieving the node data", e);
-        } catch (ClassNotFoundException e) {
-            throw new ClusterCoordinationException("Error retrieving the node data", e);
         } finally {
             close(resultSet, RDBMSConstants.TASK_GET_ALL_QUEUES);
             close(preparedStatement, RDBMSConstants.TASK_GET_ALL_QUEUES);
             close(connection, RDBMSConstants.TASK_GET_ALL_QUEUES);
         }
         return nodeDetail;
+    }
+
+    /**
+     * Method to retrieve the properties map, given a ResultSet.
+     * @param resultSet the ResultSet from which the properties map needs to be retrieved
+     * @return the retrieved properties map
+     */
+    private Map<String, Object> retrievePropertiesMap(ResultSet resultSet) {
+        try {
+            if (resultSet.getBlob(3) != null) {
+                int blobLength = (int) resultSet.getBlob(3).length();
+                byte[] bytes = resultSet.getBlob(3).getBytes(1L, blobLength);
+                ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+                ObjectInputStream ois = new ObjectInputStream(bis);
+                Object blobObject = ois.readObject();
+                if (blobObject instanceof Map) {
+                    return (Map) blobObject;
+                }
+            }
+        } catch (SQLException e) {
+            String task = RDBMSConstants.TASK_GET_ALL_QUEUES;
+            throw new ClusterCoordinationException("Error occurred while " + task, e);
+        } catch (IOException | ClassNotFoundException e) {
+            throw new ClusterCoordinationException("Error retrieving the property map", e);
+        }
+        return Collections.emptyMap();
     }
 
     /**
