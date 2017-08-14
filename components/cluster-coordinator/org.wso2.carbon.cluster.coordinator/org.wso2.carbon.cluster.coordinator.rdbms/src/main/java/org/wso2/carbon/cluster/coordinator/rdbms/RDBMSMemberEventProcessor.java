@@ -19,7 +19,6 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.cluster.coordinator.commons.MemberEventListener;
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
 import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationStrategyConfiguration;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
@@ -68,7 +67,7 @@ public class RDBMSMemberEventProcessor {
     public void addNewListenerTask(String nodeId) {
         membershipListenerTask = new RDBMSMemberEventListenerTask(nodeId, communicationBusContext);
         int scheduledPeriod = CoordinationStrategyConfiguration.getInstance().getRdbmsConfigs()
-                .get(CoordinationPropertyNames.RDBMS_BASED_EVENT_POLLING_INTERVAL);
+                .getEventPollingInterval();
         this.clusterMembershipReaderTaskScheduler
                 .scheduleWithFixedDelay(membershipListenerTask, scheduledPeriod, scheduledPeriod,
                         TimeUnit.MILLISECONDS);

@@ -20,7 +20,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
 import org.wso2.carbon.cluster.coordinator.commons.MemberEventListener;
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
 import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationStrategyConfiguration;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
@@ -100,9 +99,9 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                 .setNameFormat("RDBMSCoordinationStrategy-%d").build();
         this.threadExecutor = Executors.newScheduledThreadPool(
                 CoordinationStrategyConfiguration.getInstance().getRdbmsConfigs()
-                                                 .get("heartbeatInterval"), namedThreadFactory);
+                                                 .getTaskThreadCount(), namedThreadFactory);
         this.heartBeatInterval = CoordinationStrategyConfiguration.getInstance().getRdbmsConfigs()
-                                                                  .get(CoordinationPropertyNames.RDBMS_BASED_COORDINATION_HEARTBEAT_INTERVAL);
+                                                                  .getHeartbeatInterval();
         // Maximum age of a heartbeat. After this much of time, the heartbeat is considered invalid and node is
         // considered to have left the cluster.
         this.heartbeatMaxAge = heartBeatInterval * 2;

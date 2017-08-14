@@ -30,7 +30,7 @@ public class CoordinationStrategyConfigUtil {
     /**
      * Variable to hold RDBMS based coordination configurations.
      */
-    private Map<String, Integer> rdbmsConfig;
+    private RdbmsConfig rdbmsConfig;
 
     /**
      * Variable to hold Zookeeper based coordination configurations.
@@ -58,11 +58,11 @@ public class CoordinationStrategyConfigUtil {
         this.dataSourceConfig = dataSourceConfig;
     }
 
-    public Map<String, Integer> getRdbmsConfig() {
+    public RdbmsConfig getRdbmsConfig() {
         return this.rdbmsConfig;
     }
 
-    public void setRdbmsConfig(Map<String, Integer> rdbmsConfig) {
+    public void setRdbmsConfig(RdbmsConfig rdbmsConfig) {
         this.rdbmsConfig = rdbmsConfig;
     }
 
