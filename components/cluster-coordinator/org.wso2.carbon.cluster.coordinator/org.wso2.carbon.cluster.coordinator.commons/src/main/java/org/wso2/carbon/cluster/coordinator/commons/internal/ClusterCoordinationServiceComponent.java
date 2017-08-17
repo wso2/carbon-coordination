@@ -51,17 +51,14 @@ public class ClusterCoordinationServiceComponent {
      */
     protected void activate(ComponentContext context) {
         ClusterCoordinator clusterCoordinator = null;
-        try {
-            CoordinationStrategy coordinationStrategy = ClusterCoordinationServiceDataHolder.getInstance()
-                                                                                            .getCoordinationStrategy();
-            if (coordinationStrategy != null) {
-                clusterCoordinator = new ClusterCoordinator(coordinationStrategy);
-            } else {
-                logger.fatal("Cannot initialize cluster coordination service without strategy implementation");
-            }
-        } catch (Exception e) {
-            logger.fatal("Error while cluster coordination service", e);
+        CoordinationStrategy coordinationStrategy = ClusterCoordinationServiceDataHolder.getInstance()
+                                                                                        .getCoordinationStrategy();
+        if (coordinationStrategy != null) {
+            clusterCoordinator = new ClusterCoordinator(coordinationStrategy);
+        } else {
+            logger.fatal("Cannot initialize cluster coordination service without strategy implementation");
         }
+
         serviceRegistration = context.getBundleContext().registerService(ClusterCoordinator.class.getName(),
                                                                          clusterCoordinator,
                                                                          null);
