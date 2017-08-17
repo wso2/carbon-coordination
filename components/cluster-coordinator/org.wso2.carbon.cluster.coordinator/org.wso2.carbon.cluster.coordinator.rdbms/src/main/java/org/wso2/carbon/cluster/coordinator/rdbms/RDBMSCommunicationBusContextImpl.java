@@ -17,7 +17,6 @@ package org.wso2.carbon.cluster.coordinator.rdbms;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
 import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationStrategyConfiguration;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
@@ -39,7 +38,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import javax.naming.ConfigurationException;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -64,9 +62,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
     public RDBMSCommunicationBusContextImpl() {
         String jndiLookupName = "";
         try {
-            if (CoordinationStrategyConfiguration.getInstance().getDataSourceConfigs() != null) {
-                jndiLookupName = CoordinationStrategyConfiguration.getInstance().getDataSourceConfigs()
-                        .get(CoordinationPropertyNames.DATASOURCE_CONFIG_NAME);
+            if (CoordinationStrategyConfiguration.getInstance().getRdbmsConfigs() != null) {
+                jndiLookupName = CoordinationStrategyConfiguration.getInstance().getRdbmsConfigs().getDataSource();
                 datasource = InitialContext.doLookup(jndiLookupName);
                 logger.info("DataSource looked up for JNDI config " + jndiLookupName);
             } else {

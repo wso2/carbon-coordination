@@ -27,28 +27,11 @@ public class CoordinationPropertyNames {
      * Name of the coordination strategy class.
      */
     public static final String ZOOKEEPER_COORDINATION_STRATERGY = "org.wso2.carbon.cluster.coordinator.zookeeper.ZookeeperCoordinationStrategy";
-    /**
-     * Coordination heartbeat interval property name which the nodes will be updating the database heartbeats.
-     */
-    public static final String RDBMS_BASED_COORDINATION_HEARTBEAT_INTERVAL = "heartbeatInterval";
-    /**
-     * A node will poll the databases with this time interval property name.
-     */
-    public static final String RDBMS_BASED_EVENT_POLLING_INTERVAL = "eventPollingInterval";
-    /**
-     * A node will poll the databases with this time interval property name.
-     */
-    public static final String RDBMS_BASED_PERFORM_TASK_THREAD_COUNT = "taskThreadCount";
 
     /**
      * Zookeeper connection string property name
      */
     public static final String ZOOKEEPER_CONNECTION_STRING = "connectionString";
-
-    /**
-     * RDBMS coordination DataSource property name.
-     */
-    public static final String DATASOURCE_CONFIG_NAME = "dataSource";
 
     /**
      * This class does not need to be instantiated as all the variables are static and public.

@@ -69,7 +69,7 @@ public class CoordinationStrategyConfiguration {
         return null;
     }
 
-    public Map<String, Integer> getRdbmsConfigs() {
+    public RdbmsConfig getRdbmsConfigs() {
         if (config != null) {
             return config.getRdbmsConfig();
         }

@@ -21,16 +21,10 @@ import java.util.Map;
  * The class which extracts configuration property names from the yaml.
  */
 public class CoordinationStrategyConfigUtil {
-
-    /**
-     * Variable to hold DataSource configurations.
-     */
-    private Map<String, String> dataSourceConfig;
-
     /**
      * Variable to hold RDBMS based coordination configurations.
      */
-    private Map<String, Integer> rdbmsConfig;
+    private RdbmsConfig rdbmsConfig;
 
     /**
      * Variable to hold Zookeeper based coordination configurations.
@@ -42,27 +36,11 @@ public class CoordinationStrategyConfigUtil {
      */
     private String strategy;
 
-    /**
-     * Method to retrieve DataSource configurations specified in coordinatorConfig.yaml file.
-     * @return  map of DataSource configurations
-     */
-    public Map<String, String> getDataSourceConfig() {
-        return this.dataSourceConfig;
-    }
-
-    /**
-     * Method to set the DataSource configurations.
-     * @param dataSourceConfig map of DataSource configurations to be set
-     */
-    public void setDataSourceConfig(Map<String, String> dataSourceConfig) {
-        this.dataSourceConfig = dataSourceConfig;
-    }
-
-    public Map<String, Integer> getRdbmsConfig() {
+    public RdbmsConfig getRdbmsConfig() {
         return this.rdbmsConfig;
     }
 
-    public void setRdbmsConfig(Map<String, Integer> rdbmsConfig) {
+    public void setRdbmsConfig(RdbmsConfig rdbmsConfig) {
         this.rdbmsConfig = rdbmsConfig;
     }
 

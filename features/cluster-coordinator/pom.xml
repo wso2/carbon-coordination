@@ -13,7 +13,6 @@
     <modules>
         <module>org.wso2.carbon.cluster.coordinator.commons.feature</module>
         <module>org.wso2.carbon.cluster.coordinator.rdbms.feature</module>
-        <module>org.wso2.carbon.cluster.coordinator.service.feature</module>
         <module>org.wso2.carbon.cluster.coordinator.zookeeper.feature</module>
     </modules>
 

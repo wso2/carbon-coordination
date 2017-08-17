@@ -15,45 +15,17 @@
 
 package org.wso2.carbon.cluster.coordinator.commons;
 
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationStrategyConfiguration;
-import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 
 import java.util.List;
 import java.util.Map;
 
-/**
- * The OSGI service class for the coordinator algorithm.
- */
 public class ClusterCoordinator {
 
-    /**
-     * Creates a new instance of the ClusterCoordinator class.
-     */
-    private static ClusterCoordinator instance = new ClusterCoordinator();
     private CoordinationStrategy coordinationStrategy;
 
-    private ClusterCoordinator() {
-        CoordinationStrategyConfiguration coordinationStrategyConfiguration = CoordinationStrategyConfiguration
-                .getInstance();
-        ClusterCoordinator.class.getClassLoader();
-        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-        try {
-            this.coordinationStrategy = (CoordinationStrategy) classLoader
-                    .loadClass(coordinationStrategyConfiguration.getConfiguration()).newInstance();
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            throw new ClusterCoordinationException("Error when initializing coordinator strategy",
-                    e);
-        }
-    }
-
-    /**
-     * Get the created instance of the current class.
-     *
-     * @return the created instance of the Clustercoordinator class
-     */
-    public static ClusterCoordinator getInstance() {
-        return instance;
+    public ClusterCoordinator(CoordinationStrategy coordinationStrategy) {
+        this.coordinationStrategy = coordinationStrategy;
     }
 
     /**
