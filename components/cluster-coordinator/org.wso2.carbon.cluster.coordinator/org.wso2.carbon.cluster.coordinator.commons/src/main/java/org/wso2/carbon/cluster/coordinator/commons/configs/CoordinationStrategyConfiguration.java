@@ -58,17 +58,6 @@ public class CoordinationStrategyConfiguration {
         return null;
     }
 
-    /**
-     * Method to retrieve DataSource configurations.
-     * @return  map of DataSource configurations
-     */
-    public Map<String, String> getDataSourceConfigs() {
-        if (config != null) {
-            return config.getDataSourceConfig();
-        }
-        return null;
-    }
-
     public RdbmsConfig getRdbmsConfigs() {
         if (config != null) {
             return config.getRdbmsConfig();
