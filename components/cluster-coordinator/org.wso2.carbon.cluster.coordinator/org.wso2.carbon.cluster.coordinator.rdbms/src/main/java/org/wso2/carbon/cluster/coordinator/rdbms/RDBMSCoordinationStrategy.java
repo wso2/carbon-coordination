@@ -388,20 +388,15 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             boolean electedAsCoordinator = communicationBusContext
                     .createCoordinatorEntry(localNodeId, localGroupId);
             if (electedAsCoordinator) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(
-                            "Elected current node as the coordinator in group " + localGroupId);
-                }
+                logger.info("Elected current node as the coordinator in group " + localGroupId);
                 nextState = NodeState.COORDINATOR;
                 // notify nodes about coordinator change
                 rdbmsMemberEventProcessor
                         .notifyMembershipEvent(localNodeId, localGroupId, getAllNodeIdentifiers(),
                                 MemberEventType.COORDINATOR_CHANGED);
             } else {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Election resulted in current node becoming a " + NodeState.MEMBER
-                            + " node in group " + localGroupId);
-                }
+                logger.info("Election resulted in current node becoming a " + NodeState.MEMBER + " node in group "
+                        + localGroupId);
                 nextState = NodeState.MEMBER;
             }
             return nextState;
