@@ -42,46 +42,49 @@ import java.util.concurrent.TimeUnit;
 public class RDBMSCoordinationStrategy implements CoordinationStrategy {
 
     /**
+     * Class logger.
+     */
+    private final static Log logger = LogFactory.getLog(RDBMSCoordinationStrategy.class);
+
+    /**
      * Heartbeat interval in seconds.
      */
     private final int heartBeatInterval;
+
     /**
      * After this much of time the node is assumed to have left the cluster.
      */
     private final int heartbeatMaxAge;
+
     /**
      * Thread executor used to run the coordination algorithm.
      */
     private final ScheduledExecutorService threadExecutor;
-    /**
-     * Class logger.
-     */
-    private Log logger = LogFactory.getLog(RDBMSCoordinationStrategy.class);
+
     /**
      * Used to send and receive cluster notifications.
      */
     private RDBMSMemberEventProcessor rdbmsMemberEventProcessor;
+
     /**
      * Used to communicate with the communication bus context.
      */
     private RDBMSCommunicationBusContextImpl communicationBusContext;
 
+    /**
+     * Identifier used to identify the node uniquely in the cluster
+     */
     private String localNodeId;
 
     /**
      * Possible node states
      *
-     *              +----------+
-     *    +-------->+ Election +<---------+
-     *    |         +----------+          |
-     *    |            |    |             |
-     *    |            |    |             |
-     * +-----------+   |    |   +-------------+
-     * |   MEMBER  +<--+    +-->+ Coordinator |
+     * +-----------+            +-------------+
+     * |   MEMBER  +<---------->+ Coordinator |
      * +-----------+            +-------------+
      */
     private enum NodeState {
-        COORDINATOR, MEMBER, ELECTION
+        COORDINATOR, MEMBER
     }
 
 
@@ -142,12 +145,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
 
         CoordinatorElectionTask coordinatorElectionTask = new CoordinatorElectionTask(localNodeId,
                 groupId, propertiesMap);
-        threadExecutor.scheduleWithFixedDelay(coordinatorElectionTask, heartBeatInterval,
+        threadExecutor.scheduleAtFixedRate(coordinatorElectionTask, 0,
                 heartBeatInterval, TimeUnit.MILLISECONDS);
-    }
-
-    public String generateRandomId() {
-        return UUID.randomUUID().toString();
     }
 
     @Override
@@ -161,6 +160,10 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         this.rdbmsMemberEventProcessor.stop();
     }
 
+    private String generateRandomId() {
+        return UUID.randomUUID().toString();
+    }
+
     /**
      * For each member, this class will run in a separate thread.
      */
@@ -170,6 +173,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
          * Current state of the node.
          */
         private NodeState currentNodeState;
+
         /**
          * Used to uniquely identify a node in the cluster.
          */
@@ -179,10 +183,11 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
          * Used to uniquely identify the group ID in the cluster.
          */
         private String localGroupId;
+
         /**
          * The unique property map of the node.
          */
-        private Map<String, Object> localpropertiesMap;
+        private Map<String, Object> localPropertiesMap;
 
         /**
          * Constructor.
@@ -194,8 +199,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                                         Map<String, Object> propertiesMap) {
             this.localGroupId = groupId;
             this.localNodeId = nodeId;
-            this.localpropertiesMap = propertiesMap;
-            this.currentNodeState = NodeState.ELECTION;
+            this.localPropertiesMap = propertiesMap;
+            this.currentNodeState = NodeState.MEMBER;
         }
 
         @Override
@@ -211,13 +216,12 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                     case COORDINATOR:
                         performCoordinatorTask();
                         break;
-                    case ELECTION:
-                        performElectionTask();
-                        break;
                 }
+                // We are catching throwable to avoid subsequent executions getting suppressed
             } catch (Throwable e) {
                 logger.error("Error detected while running coordination algorithm. Node became a "
                         + NodeState.MEMBER + " node in group " + localGroupId, e);
+
                 currentNodeState = NodeState.MEMBER;
             }
         }
@@ -240,7 +244,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                             + localGroupId);
                 }
                 communicationBusContext.removeCoordinator(localGroupId, heartbeatMaxAge);
-                currentNodeState = NodeState.ELECTION;
+                performElectionTask();
             }
         }
 
@@ -255,7 +259,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                     .updateNodeHeartbeat(localNodeId, localGroupId);
             if (!heartbeatEntryExists) {
                 communicationBusContext
-                        .createNodeHeartbeatEntry(localNodeId, localGroupId, localpropertiesMap);
+                        .createNodeHeartbeatEntry(localNodeId, localGroupId, localPropertiesMap);
             }
         }
 
@@ -282,7 +286,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                     logger.debug("Going for election since Coordinator state is lost in group"
                             + localGroupId);
                 }
-                currentNodeState = NodeState.ELECTION;
+                performElectionTask();
             }
         }
 
