@@ -137,12 +137,13 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
 
     @Override
     public void joinGroup(String groupId, Map<String, Object> propertiesMap) {
+        //clear old membership events for the node
+        communicationBusContext.clearMembershipEvents(localNodeId, groupId);
+
         CoordinatorElectionTask coordinatorElectionTask = new CoordinatorElectionTask(localNodeId,
                 groupId, propertiesMap);
         threadExecutor.scheduleWithFixedDelay(coordinatorElectionTask, heartBeatInterval,
                 heartBeatInterval, TimeUnit.MILLISECONDS);
-        //clear old membership events for the node
-        communicationBusContext.clearMembershipEvents(localNodeId, groupId);
     }
 
     public String generateRandomId() {
@@ -195,12 +196,6 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             this.localNodeId = nodeId;
             this.localpropertiesMap = propertiesMap;
             this.currentNodeState = NodeState.ELECTION;
-            try {
-                communicationBusContext.clearMembershipEvents(nodeId, groupId);
-            } catch (ClusterCoordinationException e) {
-                logger.warn("Error while clearing old membership events for local node (" + nodeId
-                        + ") and group (" + groupId + ")", e);
-            }
         }
 
         @Override
