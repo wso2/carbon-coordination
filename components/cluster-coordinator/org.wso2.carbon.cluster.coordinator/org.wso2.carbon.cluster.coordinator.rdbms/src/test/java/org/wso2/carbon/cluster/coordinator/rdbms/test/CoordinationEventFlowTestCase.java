@@ -24,6 +24,7 @@ import org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBaseTest {
     RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeOne;
@@ -31,7 +32,8 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
     RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeThree;
     EventListener eventListener;
 
-    @BeforeClass public void initialize() throws InterruptedException, FileNotFoundException {
+    @BeforeClass
+    public void initialize() throws InterruptedException, FileNotFoundException {
         System.setProperty("carbon.home", "src/test/resources");
         init();
         rdbmsCoordinationStrategyNodeOne = new RDBMSCoordinationStrategy(dataSource);
@@ -40,7 +42,8 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
         eventListener = new EventListener();
     }
 
-    @Test public void testMemberJoined() throws InterruptedException {
+    @Test
+    public void testMemberJoined() throws InterruptedException {
         Map<String, Object> nodeOnePropertyMap = new HashMap<>();
         nodeOnePropertyMap.put("id", "node1");
         rdbmsCoordinationStrategyNodeOne.joinGroup("testGroupOne", nodeOnePropertyMap);
@@ -49,7 +52,8 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
 
     }
 
-    @Test(dependsOnMethods = { "testMemberJoined" }) public void testCoordinatorElected()
+    @Test(dependsOnMethods = {"testMemberJoined"})
+    public void testCoordinatorElected()
             throws InterruptedException {
         String leaderId = null;
         int count = 0;
@@ -71,7 +75,8 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
         Assert.assertTrue(coordinatorIdentified, "Coordinator was not elected in group");
     }
 
-    @Test(dependsOnMethods = { "testCoordinatorElected" }) public void testMultipleMemberJoined()
+    @Test(dependsOnMethods = {"testCoordinatorElected"})
+    public void testMultipleMemberJoined()
             throws InterruptedException {
         Map<String, Object> nodeTwoPropertyMap = new HashMap<>();
         nodeTwoPropertyMap.put("id", "node2");
@@ -94,7 +99,8 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
     }
 
     @Test(dependsOnMethods = {
-            "testMultipleMemberJoined" }) public void testMemberAddedEventRecieved()
+            "testMultipleMemberJoined"})
+    public void testMemberAddedEventRecieved()
             throws InterruptedException {
         int count = 0;
         boolean eventRecieved = false;
@@ -109,7 +115,8 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
         Assert.assertTrue(eventRecieved, "Member added event not received.");
     }
 
-    @Test(dependsOnMethods = { "testMemberAddedEventRecieved" }) public void testMemberRemoved()
+    @Test(dependsOnMethods = {"testMemberAddedEventRecieved"})
+    public void testMemberRemoved()
             throws InterruptedException {
         rdbmsCoordinationStrategyNodeTwo.stop();
         int count = 0;
@@ -125,7 +132,8 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
         Assert.assertTrue(membersRemoved, "Member not removed from group");
     }
 
-    @Test(dependsOnMethods = { "testMemberRemoved" }) public void testMemberRemovedEventRecieved()
+    @Test(dependsOnMethods = {"testMemberRemoved"})
+    public void testMemberRemovedEventRecieved()
             throws InterruptedException {
         int count = 0;
         boolean eventRecieved = false;
@@ -141,7 +149,8 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
     }
 
     @Test(dependsOnMethods = {
-            "testMemberRemovedEventRecieved" }) public void testCoordinatorChanged()
+            "testMemberRemovedEventRecieved"})
+    public void testCoordinatorChanged()
             throws InterruptedException {
         int count;
         String leaderId = null;
@@ -156,6 +165,8 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
         boolean coordinatorChanged = false;
         count = 0;
 
+        // Wait for cluster to stabilize
+        TimeUnit.SECONDS.sleep(1);
         rdbmsCoordinationStrategyNodeOne.stop();
 
         while (count < 10) {
