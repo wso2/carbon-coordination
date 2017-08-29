@@ -68,6 +68,23 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
 
     private String localNodeId;
 
+    /**
+     * Possible node states
+     *
+     *              +----------+
+     *    +-------->+ Election +<---------+
+     *    |         +----------+          |
+     *    |            |    |             |
+     *    |            |    |             |
+     * +-----------+   |    |   +-------------+
+     * |   MEMBER  +<--+    +-->+ Coordinator |
+     * +-----------+            +-------------+
+     */
+    private enum NodeState {
+        COORDINATOR, MEMBER, ELECTION
+    }
+
+
     public RDBMSCoordinationStrategy() {
         ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("RDBMSCoordinationStrategy-%d").build();
@@ -101,12 +118,14 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         this.communicationBusContext = new RDBMSCommunicationBusContextImpl(datasource);
     }
 
-    @Override public List<NodeDetail> getAllNodeDetails(String groupId)
+    @Override
+    public List<NodeDetail> getAllNodeDetails(String groupId)
             throws ClusterCoordinationException {
         return communicationBusContext.getAllNodeData(groupId);
     }
 
-    @Override public NodeDetail getLeaderNode(String groupID) {
+    @Override
+    public NodeDetail getLeaderNode(String groupID) {
         List<NodeDetail> nodeDetails = communicationBusContext.getAllNodeData(groupID);
         for (NodeDetail nodeDetail : nodeDetails) {
             if (nodeDetail.isCoordinator()) {
@@ -116,7 +135,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         return null;
     }
 
-    @Override public void joinGroup(String groupId, Map<String, Object> propertiesMap) {
+    @Override
+    public void joinGroup(String groupId, Map<String, Object> propertiesMap) {
         CoordinatorElectionTask coordinatorElectionTask = new CoordinatorElectionTask(localNodeId,
                 groupId, propertiesMap);
         threadExecutor.scheduleWithFixedDelay(coordinatorElectionTask, heartBeatInterval,
@@ -129,7 +149,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         return UUID.randomUUID().toString();
     }
 
-    @Override public void registerEventListener(MemberEventListener memberEventListener) {
+    @Override
+    public void registerEventListener(MemberEventListener memberEventListener) {
         // Register listener for membership changes
         rdbmsMemberEventProcessor.addEventListener(memberEventListener);
     }
@@ -137,22 +158,6 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
     public void stop() {
         this.threadExecutor.shutdown();
         this.rdbmsMemberEventProcessor.stop();
-    }
-
-    /**
-     * Possible node states
-     * <p>
-     * +----------+
-     * +-------->+ Election +<---------+
-     * |         +----------+          |
-     * |            |    |             |
-     * |            |    |             |
-     * +-----------+   |    |   +-------------+
-     * | Candidate +<--+    +-->+ Coordinator |
-     * +-----------+            +-------------+
-     */
-    private enum NodeState {
-        COORDINATOR, MEMBER
     }
 
     /**
@@ -185,11 +190,11 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
          * @param groupId group ID of the current group
          */
         private CoordinatorElectionTask(String nodeId, String groupId,
-                Map<String, Object> propertiesMap) {
+                                        Map<String, Object> propertiesMap) {
             this.localGroupId = groupId;
             this.localNodeId = nodeId;
             this.localpropertiesMap = propertiesMap;
-            this.currentNodeState = NodeState.MEMBER;
+            this.currentNodeState = NodeState.ELECTION;
             try {
                 communicationBusContext.clearMembershipEvents(nodeId, groupId);
             } catch (ClusterCoordinationException e) {
@@ -198,18 +203,22 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             }
         }
 
-        @Override public void run() {
+        @Override
+        public void run() {
             try {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Current node state: " + currentNodeState);
                 }
                 switch (currentNodeState) {
-                case MEMBER:
-                    performMemberTask();
-                    break;
-                case COORDINATOR:
-                    performCoordinatorTask();
-                    break;
+                    case MEMBER:
+                        performMemberTask();
+                        break;
+                    case COORDINATOR:
+                        performCoordinatorTask();
+                        break;
+                    case ELECTION:
+                        performElectionTask();
+                        break;
                 }
             } catch (Throwable e) {
                 logger.error("Error detected while running coordination algorithm. Node became a "
@@ -236,7 +245,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                             + localGroupId);
                 }
                 communicationBusContext.removeCoordinator(localGroupId, heartbeatMaxAge);
-                performElectionTask();
+                currentNodeState = NodeState.ELECTION;
             }
         }
 
@@ -278,7 +287,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                     logger.debug("Going for election since Coordinator state is lost in group"
                             + localGroupId);
                 }
-                performElectionTask();
+                currentNodeState = NodeState.ELECTION;
             }
         }
 
@@ -289,7 +298,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
          * @param currentTimeMillis  current timestamp
          */
         private void findAddedRemovedMembers(List<NodeDetail> allNodeInformation,
-                long currentTimeMillis) {
+                                             long currentTimeMillis) {
             List<String> allActiveNodeIds = getNodeIds(allNodeInformation);
             List<NodeDetail> removedNodeDetails = new ArrayList<>();
             List<String> newNodes = new ArrayList<String>();
@@ -335,7 +344,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
          * @param removedNodeDetails node details of the removed nodes
          */
         private void storeRemovedMemberDetails(List<String> allActiveNodeIds,
-                List<NodeDetail> removedNodeDetails) {
+                                               List<NodeDetail> removedNodeDetails) {
             for (NodeDetail nodeDetail : removedNodeDetails) {
                 communicationBusContext
                         .insertRemovedNodeDetails(nodeDetail.getNodeId(), nodeDetail.getGroupId(),
@@ -350,7 +359,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
          * @param allActiveNodeIds all the node IDs of the current group
          */
         private void notifyRemovedMembers(List<String> removedNodes, List<String> allActiveNodeIds,
-                List<NodeDetail> removedNodeDetails) {
+                                          List<NodeDetail> removedNodeDetails) {
             storeRemovedMemberDetails(allActiveNodeIds, removedNodeDetails);
             for (String removedNode : removedNodes) {
                 if (logger.isDebugEnabled()) {
