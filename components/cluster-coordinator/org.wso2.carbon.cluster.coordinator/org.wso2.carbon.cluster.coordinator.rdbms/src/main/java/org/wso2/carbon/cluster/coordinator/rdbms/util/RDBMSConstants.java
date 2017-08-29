@@ -193,7 +193,7 @@ public class RDBMSConstants {
                     + "                        GROUP_ID VARCHAR(512) NOT NULL,\n"
                     + "                        NODE_ID VARCHAR(512) NOT NULL,\n"
                     + "                        CHANGE_TYPE INT NOT NULL,\n"
-                    + "                        CHANGED_MEMBER_ID VARCHAR(512) NOT NULL,\n" + ");\n";
+                    + "                        CHANGED_MEMBER_ID VARCHAR(512) NOT NULL\n" + ");\n";
 
     public static final String CREATE_REMOVED_MEMBERS_TABLE =
             "CREATE TABLE IF NOT EXISTS REMOVED_MEMBERS_TABLE (\n"
