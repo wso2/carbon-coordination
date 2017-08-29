@@ -66,33 +66,17 @@
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Private-Package>
                             org.wso2.carbon.cluster.coordinator.rdbms.internal.ds.*,
-                            org.wso2.carbon.cluster.coordinator.rdbms.util,
-                            org.wso2.carbon.cluster.coordinator.rdbms.util.*,
-                            org.wso2.carbon.cluster.coordinator.rdbms,
-                            org.wso2.carbon.cluster.coordinator.rdbms.*
-                            java.sql*,
-                            javax.sql*
+                            org.wso2.carbon.cluster.coordinator.rdbms.util.*
                         </Private-Package>
                         <Export-Package>
-                            !org.wso2.carbon.cluster.coordinator.rdbms.util,
-                            !org.wso2.carbon.cluster.coordinator.rdbms.util.*
                             !org.wso2.carbon.cluster.coordinator.rdbms.internal.ds.*,
-                            org.wso2.carbon.cluster.coordinator.rdbms,
-                            org.wso2.carbon.cluster.coordinator.rdbms.*
+                            !org.wso2.carbon.cluster.coordinator.rdbms.util.*,
+                            org.wso2.carbon.cluster.coordinator.rdbms.*;version="${carbon.coordination.exp.package.version}"
                         </Export-Package>
                         <Import-Package>
-                            org.wso2.carbon.cluster.coordinator.commons.util,
-                            org.wso2.carbon.cluster.coordinator.commons.util.*,
-                            org.wso2.carbon.cluster.coordinator.commons.node,
-                            org.wso2.carbon.cluster.coordinator.commons.node.*,
-                            org.wso2.carbon.cluster.coordinator.commons.exception,
-                            org.wso2.carbon.cluster.coordinator.commons.exception.*,
-                            org.wso2.carbon.cluster.coordinator.commons.configs,
-                            org.wso2.carbon.cluster.coordinator.commons.configs.*,
-                            org.wso2.carbon.cluster.coordinator.commons,
-                            org.wso2.carbon.cluster.coordinator.commons.*
-                            com.google.common.*,
-                            org.apache.commons.logging.*,
+                            org.wso2.carbon.cluster.coordinator.commons.*;version="${carbon.coordination.version}",
+                            com.google.common.*;version="${guava.imp.package.version}",
+                            org.apache.commons.logging.*;version="${commons.logging.imp.package.version}",
                             *;resolution:=optional
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
