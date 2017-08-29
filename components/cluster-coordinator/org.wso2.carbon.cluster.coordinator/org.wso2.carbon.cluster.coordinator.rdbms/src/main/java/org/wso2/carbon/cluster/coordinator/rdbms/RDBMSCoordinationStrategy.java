@@ -78,7 +78,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
 
     /**
      * Possible node states
-     *
+     * <p>
      * +-----------+            +-------------+
      * |   MEMBER  +<---------->+ Coordinator |
      * +-----------+            +-------------+
@@ -89,23 +89,14 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
 
 
     public RDBMSCoordinationStrategy() {
-        ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("RDBMSCoordinationStrategy-%d").build();
-        this.threadExecutor = Executors.newScheduledThreadPool(
-                CoordinationStrategyConfiguration.getInstance().getRdbmsConfigs()
-                        .get(CoordinationPropertyNames.RDBMS_BASED_PERFORM_TASK_THREAD_COUNT),
-                namedThreadFactory);
-        this.heartBeatInterval = CoordinationStrategyConfiguration.getInstance().getRdbmsConfigs()
-                .get(CoordinationPropertyNames.RDBMS_BASED_COORDINATION_HEARTBEAT_INTERVAL);
-        // Maximum age of a heartbeat. After this much of time, the heartbeat is considered invalid and node is
-        // considered to have left the cluster.
-        this.heartbeatMaxAge = heartBeatInterval * 2;
-        this.localNodeId = generateRandomId();
-        this.rdbmsMemberEventProcessor = new RDBMSMemberEventProcessor(localNodeId);
-        this.communicationBusContext = new RDBMSCommunicationBusContextImpl();
+        this(new RDBMSCommunicationBusContextImpl());
     }
 
     public RDBMSCoordinationStrategy(DataSource datasource) {
+        this(new RDBMSCommunicationBusContextImpl(datasource));
+    }
+
+    private RDBMSCoordinationStrategy(RDBMSCommunicationBusContextImpl communicationBusContext) {
         ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("RDBMSCoordinationStrategy-%d").build();
         this.threadExecutor = Executors.newScheduledThreadPool(
@@ -117,8 +108,9 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         // considered to have left the cluster.
         this.heartbeatMaxAge = heartBeatInterval * 2;
         this.localNodeId = generateRandomId();
-        this.rdbmsMemberEventProcessor = new RDBMSMemberEventProcessor(localNodeId, datasource);
-        this.communicationBusContext = new RDBMSCommunicationBusContextImpl(datasource);
+
+        this.communicationBusContext = communicationBusContext;
+        this.rdbmsMemberEventProcessor = new RDBMSMemberEventProcessor(localNodeId, communicationBusContext);
     }
 
     @Override

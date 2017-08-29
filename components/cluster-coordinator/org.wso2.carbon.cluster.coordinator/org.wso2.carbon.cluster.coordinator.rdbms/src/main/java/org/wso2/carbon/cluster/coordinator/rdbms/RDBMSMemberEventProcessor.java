@@ -52,22 +52,13 @@ public class RDBMSMemberEventProcessor {
      */
     private RDBMSCommunicationBusContextImpl communicationBusContext;
 
-    public RDBMSMemberEventProcessor(String nodeId) {
-        this.communicationBusContext = new RDBMSCommunicationBusContextImpl();
+    public RDBMSMemberEventProcessor(String localNodeId, RDBMSCommunicationBusContextImpl communicationBusContext) {
+        this.communicationBusContext = communicationBusContext;
         ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("ClusterEventReaderTask-%d").build();
         this.clusterMembershipReaderTaskScheduler = Executors
                 .newSingleThreadScheduledExecutor(namedThreadFactory);
-        addNewListenerTask(nodeId);
-    }
-
-    public RDBMSMemberEventProcessor(String nodeId, DataSource dataSource) {
-        this.communicationBusContext = new RDBMSCommunicationBusContextImpl(dataSource);
-        ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("ClusterEventReaderTask-%d").build();
-        this.clusterMembershipReaderTaskScheduler = Executors
-                .newSingleThreadScheduledExecutor(namedThreadFactory);
-        addNewListenerTask(nodeId, dataSource);
+        addNewListenerTask(localNodeId);
     }
 
     /**
@@ -76,28 +67,9 @@ public class RDBMSMemberEventProcessor {
      * @param nodeId the node ID of the node which starts the listening
      */
     public void addNewListenerTask(String nodeId) {
-        membershipListenerTask = new RDBMSMemberEventListenerTask(nodeId);
+        membershipListenerTask = new RDBMSMemberEventListenerTask(nodeId, communicationBusContext);
         int scheduledPeriod = CoordinationStrategyConfiguration.getInstance().getRdbmsConfigs()
                 .get(CoordinationPropertyNames.RDBMS_BASED_EVENT_POLLING_INTERVAL);
-        this.clusterMembershipReaderTaskScheduler
-                .scheduleWithFixedDelay(membershipListenerTask, scheduledPeriod, scheduledPeriod,
-                        TimeUnit.MILLISECONDS);
-        if (logger.isDebugEnabled()) {
-            logger.debug("RDBMS cluster event listener started for node " + nodeId);
-        }
-    }
-
-    /**
-     * Add new listener task with the datasource.
-     *
-     * @param nodeId     the node ID of the node which starts the listening
-     * @param dataSource the datasource to connect to the database
-     */
-    public void addNewListenerTask(String nodeId, DataSource dataSource) {
-        membershipListenerTask = new RDBMSMemberEventListenerTask(nodeId, dataSource);
-        int scheduledPeriod = CoordinationStrategyConfiguration.getInstance().getRdbmsConfigs()
-                .get(CoordinationPropertyNames.RDBMS_BASED_EVENT_POLLING_INTERVAL);
-        ;
         this.clusterMembershipReaderTaskScheduler
                 .scheduleWithFixedDelay(membershipListenerTask, scheduledPeriod, scheduledPeriod,
                         TimeUnit.MILLISECONDS);
