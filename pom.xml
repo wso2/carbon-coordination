@@ -34,7 +34,7 @@
     <modules>
         <module>components/cluster-coordinator</module>
         <module>features/cluster-coordinator</module>
-     </modules>
+    </modules>
 
     <scm>
         <url>https://github.com/wso2/carbon-coordination.git</url>
@@ -56,6 +56,15 @@
                     <groupId>org.wso2.carbon.maven</groupId>
                     <artifactId>carbon-feature-plugin</artifactId>
                     <version>${carbon.feature.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven.compiler.plugin.version}</version>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.felix</groupId>
@@ -262,7 +271,8 @@
 
     <properties>
         <carbon.coordination.version>2.0.0-SNAPSHOT</carbon.coordination.version>
-        <carbon.coordination.exp.package.version>${carbon.coordination.version}</carbon.coordination.exp.package.version>
+        <carbon.coordination.exp.package.version>${carbon.coordination.version}
+        </carbon.coordination.exp.package.version>
 
         <curator.framework.version>2.6.0</curator.framework.version>
         <apache.zookeeper.version>3.4.6</apache.zookeeper.version>
@@ -273,6 +283,9 @@
         <maven.scr.version>1.21.0</maven.scr.version>
         <carbon.feature.plugin.version>3.0.0</carbon.feature.plugin.version>
         <maven.findbugsplugin.version.exclude>findbugs-exclude.xml</maven.findbugsplugin.version.exclude>
+        <maven.checkstyleplugin.version>2.17</maven.checkstyleplugin.version>
+        <maven.compiler.plugin.version>3.5.1</maven.compiler.plugin.version>
+        <maven.findbugsplugin.version>3.0.3</maven.findbugsplugin.version>
 
         <carbon.kernel.version>5.2.0-m3</carbon.kernel.version>
         <carbon.utils.version>1.2.1</carbon.utils.version>

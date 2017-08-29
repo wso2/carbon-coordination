@@ -200,7 +200,7 @@ public class RDBMSConstants {
                     + "                        GROUP_ID VARCHAR(512) NOT NULL,\n"
                     + "                        NODE_ID VARCHAR(512) NOT NULL,\n"
                     + "                        PROPERTY_MAP BLOB NOT NULL,\n"
-                    + "                        REMOVED_MEMBER_ID VARCHAR(512) NOT NULL,\n" + ");\n";
+                    + "                        REMOVED_MEMBER_ID VARCHAR(512) NOT NULL\n" + ");\n";
 
     /**
      * Only public static constants are in this class. No need to instantiate.
