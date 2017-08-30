@@ -30,8 +30,12 @@ import java.util.Map;
 /**
  * The OSGI service component for the coordinator algorithm.
  */
-@Component(name = "org.wso2.carbon.cluster.coordinator.commons.ClusterCoordinator", immediate = true, property = {
-        "componentName=wso2-cluster-coordinator-service" }) public class ClusterCoordinator {
+@Component(
+        name = "org.wso2.carbon.cluster.coordinator.commons.ClusterCoordinator",
+        immediate = true,
+        property = {"componentName=wso2-cluster-coordinator-service" }
+)
+public class ClusterCoordinator {
 
     /**
      * Creates a new instance of the ClusterCoordinator class.
@@ -48,16 +52,9 @@ import java.util.Map;
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         try {
             this.coordinationStrategy = (CoordinationStrategy) classLoader
-                    .loadClass(coordinationStrategyConfiguration.getConfiguration()).newInstance();
-        } catch (ClassNotFoundException e) {
-            throw new ClusterCoordinationException("Error while initializing cluster coordinator",
-                    e);
-        } catch (InstantiationException e) {
-            throw new ClusterCoordinationException("Error while initializing cluster coordinator",
-                    e);
-        } catch (IllegalAccessException e) {
-            throw new ClusterCoordinationException("Error while initializing cluster coordinator",
-                    e);
+                    .loadClass(coordinationStrategyConfiguration.getStrategy()).newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new ClusterCoordinationException("Error while initializing cluster coordinator", e);
         }
     }
 

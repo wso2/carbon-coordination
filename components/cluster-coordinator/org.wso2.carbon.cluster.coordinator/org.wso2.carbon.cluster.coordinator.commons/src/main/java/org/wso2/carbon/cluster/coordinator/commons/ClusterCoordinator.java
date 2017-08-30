@@ -40,7 +40,7 @@ public class ClusterCoordinator {
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         try {
             this.coordinationStrategy = (CoordinationStrategy) classLoader
-                    .loadClass(coordinationStrategyConfiguration.getConfiguration()).newInstance();
+                    .loadClass(coordinationStrategyConfiguration.getStrategy()).newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new ClusterCoordinationException("Error when initializing coordinator strategy", e);
         }

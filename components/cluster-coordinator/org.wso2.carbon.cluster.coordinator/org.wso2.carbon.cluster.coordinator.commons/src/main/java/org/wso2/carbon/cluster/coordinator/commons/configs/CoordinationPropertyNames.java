@@ -19,22 +19,27 @@ package org.wso2.carbon.cluster.coordinator.commons.configs;
  * This class contains the configuration constants needed for the RDBMS coordination algorithm.
  */
 public class CoordinationPropertyNames {
+
     /**
      * Name of the coordination strategy class.
      */
     public static final String RDBMS_COORDINATION_STRATERGY = "org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy";
+
     /**
      * Name of the coordination strategy class.
      */
     public static final String ZOOKEEPER_COORDINATION_STRATERGY = "org.wso2.carbon.cluster.coordinator.zookeeper.ZookeeperCoordinationStrategy";
+
     /**
      * Coordination heartbeat interval property name which the nodes will be updating the database heartbeats.
      */
     public static final String RDBMS_BASED_COORDINATION_HEARTBEAT_INTERVAL = "heartbeatInterval";
+
     /**
      * A node will poll the databases with this time interval property name.
      */
     public static final String RDBMS_BASED_EVENT_POLLING_INTERVAL = "eventPollingInterval";
+
     /**
      * A node will poll the databases with this time interval property name.
      */

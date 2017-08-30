@@ -20,7 +20,6 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -41,9 +40,8 @@ public class CoordinationStrategyConfiguration {
                     + "coordinatorConfig.yaml");
             config = yaml.loadAs(in, CoordinationStrategyConfigUtil.class);
             in.close();
-        } catch (FileNotFoundException e) {
-            config = null;
         } catch (IOException e) {
+            config = null;
         }
     }
 
@@ -51,7 +49,7 @@ public class CoordinationStrategyConfiguration {
         return instance;
     }
 
-    public String getConfiguration() {
+    public String getStrategy() {
         if (config != null) {
             return config.getStrategy();
         }

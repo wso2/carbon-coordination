@@ -26,22 +26,27 @@ public class NodeDetail {
      * Node ID of the belonging node.
      */
     private final String nodeId;
+
     /**
      * Group ID of the belonging node.
      */
     private final String groupId;
+
     /**
      * The last updated heartbeat value.
      */
     private final long lastHeartbeat;
+
     /**
      * Indicate if the node addition is already identified by the coordinator.
      */
     private final boolean isNewNode;
+
     /**
      * The property map of the current node.
      */
     private Map<String, Object> propertiesMap;
+
     /**
      * Indicate if the node is the coordinator node.
      */
@@ -115,7 +120,7 @@ public class NodeDetail {
      *
      * @return property map
      */
-    public Map<String, Object> getpropertiesMap() {
+    public Map<String, Object> getPropertiesMap() {
         return propertiesMap;
     }
 }

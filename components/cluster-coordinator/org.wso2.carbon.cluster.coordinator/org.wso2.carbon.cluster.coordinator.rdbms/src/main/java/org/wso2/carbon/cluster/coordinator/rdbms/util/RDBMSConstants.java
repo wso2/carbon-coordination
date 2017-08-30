@@ -21,24 +21,24 @@ package org.wso2.carbon.cluster.coordinator.rdbms.util;
 public class RDBMSConstants {
 
     // Coordination related tables
-    public static final String LEADER_STATUS_TABLE = "LEADER_STATUS_TABLE";
-    public static final String CLUSTER_NODE_STATUS_TABLE = "CLUSTER_NODE_STATUS_TABLE";
+    private static final String LEADER_STATUS_TABLE = "LEADER_STATUS_TABLE";
+    private static final String CLUSTER_NODE_STATUS_TABLE = "CLUSTER_NODE_STATUS_TABLE";
     //Cluster membership table
-    public static final String MEMBERSHIP_EVENT_TABLE = "MEMBERSHIP_EVENT_TABLE";
-    public static final String REMOVED_MEMBERS_TABLE = "REMOVED_MEMBERS_TABLE";
+    private static final String MEMBERSHIP_EVENT_TABLE = "MEMBERSHIP_EVENT_TABLE";
+    private static final String REMOVED_MEMBERS_TABLE = "REMOVED_MEMBERS_TABLE";
 
     // Cluster node status table columns
-    public static final String NODE_ID = "NODE_ID";
+    private static final String NODE_ID = "NODE_ID";
     public static final String GROUP_ID = "GROUP_ID";
-    public static final String PROPERTY_MAP = "PROPERTY_MAP";
-    public static final String LAST_HEARTBEAT = "LAST_HEARTBEAT";
-    public static final String IS_NEW_NODE = "IS_NEW_NODE";
+    private static final String PROPERTY_MAP = "PROPERTY_MAP";
+    private static final String LAST_HEARTBEAT = "LAST_HEARTBEAT";
+    private static final String IS_NEW_NODE = "IS_NEW_NODE";
     public static final String TASK_MARK_NODE_NOT_NEW = "marking node as not new";
 
     //columns for cluster membership communication
     public static final String MEMBERSHIP_CHANGE_TYPE = "CHANGE_TYPE";
     public static final String MEMBERSHIP_CHANGED_MEMBER_ID = "CHANGED_MEMBER_ID";
-    public static final String REMOVED_MEMBER_ID = "REMOVED_MEMBER_ID";
+    private static final String REMOVED_MEMBER_ID = "REMOVED_MEMBER_ID";
     public static final String MEMBERSHIP_CHANGED_GROUP_ID = "CHANGED_GROUP_ID";
 
     public static final String PS_GET_COORDINATOR_NODE_ID =

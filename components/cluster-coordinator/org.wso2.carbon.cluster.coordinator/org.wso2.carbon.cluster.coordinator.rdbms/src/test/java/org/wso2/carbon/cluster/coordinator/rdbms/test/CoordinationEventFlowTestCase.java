@@ -62,7 +62,7 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
             NodeDetail leaderNodeDetail = rdbmsCoordinationStrategyNodeOne
                     .getLeaderNode("testGroupOne");
             if (leaderNodeDetail != null) {
-                leaderId = (String) leaderNodeDetail.getpropertiesMap().get("id");
+                leaderId = (String) leaderNodeDetail.getPropertiesMap().get("id");
                 if (leaderId.equals("node1")) {
                     coordinatorIdentified = true;
                     break;
@@ -173,7 +173,7 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
             NodeDetail leaderNodeDetail = rdbmsCoordinationStrategyNodeThree
                     .getLeaderNode("testGroupOne");
             if (leaderNodeDetail != null) {
-                leaderId = (String) leaderNodeDetail.getpropertiesMap().get("id");
+                leaderId = (String) leaderNodeDetail.getPropertiesMap().get("id");
             } else {
                 leaderId = "";
             }

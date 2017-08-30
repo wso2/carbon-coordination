@@ -51,13 +51,13 @@ public class RDBMSCoordinationStratergyBaseTest {
                     + "                        GROUP_ID VARCHAR(512) NOT NULL,\n"
                     + "                        NODE_ID VARCHAR(512) NOT NULL,\n"
                     + "                        CHANGE_TYPE INT NOT NULL,\n"
-                    + "                        CHANGED_MEMBER_ID VARCHAR(512) NOT NULL,\n" + ");\n";
+                    + "                        CHANGED_MEMBER_ID VARCHAR(512) NOT NULL\n" + ");\n";
     private static final String CREATE_REMOVED_MEMBERS_TABLE =
             "CREATE TABLE IF NOT EXISTS REMOVED_MEMBERS_TABLE (\n"
                     + "                        GROUP_ID VARCHAR(512) NOT NULL,\n"
                     + "                        NODE_ID VARCHAR(512) NOT NULL,\n"
                     + "                        PROPERTY_MAP BLOB NOT NULL,\n"
-                    + "                        REMOVED_MEMBER_ID VARCHAR(512) NOT NULL,\n" + ");\n";
+                    + "                        REMOVED_MEMBER_ID VARCHAR(512) NOT NULL\n" + ");\n";
     private static final String CLEAR_LEADER_STATUS_TABLE = "DELETE FROM LEADER_STATUS_TABLE;";
     private static final String CLEAR_CLUSTER_NODE_STATUS_TABLE = "DELETE FROM CLUSTER_NODE_STATUS_TABLE;";
     private static final String CLEAR_MEMBERSHIP_EVENT_TABLE = "DELETE FROM MEMBERSHIP_EVENT_TABLE;";
@@ -107,6 +107,7 @@ public class RDBMSCoordinationStratergyBaseTest {
         PreparedStatement preparedStatement = null;
         try {
             connection = this.dataSource.getConnection();
+            connection.setAutoCommit(false);
             preparedStatement = connection.prepareStatement(query);
             preparedStatement.execute();
             connection.commit();

@@ -24,7 +24,6 @@ import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationStrategyC
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
 
-import javax.sql.DataSource;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -39,14 +38,17 @@ public class RDBMSMemberEventProcessor {
      * Class logger.
      */
     private static final Log logger = LogFactory.getLog(RDBMSMemberEventProcessor.class);
+
     /**
      * Task map used store membership listener tasks.
      */
-    RDBMSMemberEventListenerTask membershipListenerTask;
+    private RDBMSMemberEventListenerTask membershipListenerTask;
+
     /**
      * Executor service used to run the event listening task.
      */
     private ScheduledExecutorService clusterMembershipReaderTaskScheduler;
+
     /**
      * Communication bus object to communicate with the database for the context store.
      */
@@ -56,8 +58,7 @@ public class RDBMSMemberEventProcessor {
         this.communicationBusContext = communicationBusContext;
         ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("ClusterEventReaderTask-%d").build();
-        this.clusterMembershipReaderTaskScheduler = Executors
-                .newSingleThreadScheduledExecutor(namedThreadFactory);
+        this.clusterMembershipReaderTaskScheduler = Executors.newSingleThreadScheduledExecutor(namedThreadFactory);
         addNewListenerTask(localNodeId);
     }
 
@@ -70,9 +71,8 @@ public class RDBMSMemberEventProcessor {
         membershipListenerTask = new RDBMSMemberEventListenerTask(nodeId, communicationBusContext);
         int scheduledPeriod = CoordinationStrategyConfiguration.getInstance().getRdbmsConfigs()
                 .get(CoordinationPropertyNames.RDBMS_BASED_EVENT_POLLING_INTERVAL);
-        this.clusterMembershipReaderTaskScheduler
-                .scheduleWithFixedDelay(membershipListenerTask, scheduledPeriod, scheduledPeriod,
-                        TimeUnit.MILLISECONDS);
+        this.clusterMembershipReaderTaskScheduler.scheduleWithFixedDelay(membershipListenerTask,
+                scheduledPeriod, scheduledPeriod, TimeUnit.MILLISECONDS);
         if (logger.isDebugEnabled()) {
             logger.debug("RDBMS cluster event listener started for node " + nodeId);
         }
