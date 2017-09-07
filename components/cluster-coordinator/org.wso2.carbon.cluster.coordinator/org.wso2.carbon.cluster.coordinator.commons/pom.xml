@@ -8,14 +8,27 @@
         <version>2.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
+    <modelVersion>4.0.0</modelVersion>
     <artifactId>org.wso2.carbon.cluster.coordinator.commons</artifactId>
     <packaging>bundle</packaging>
+
     <dependencies>
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.wso2.orbit.org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.eclipse.osgi</groupId>
+            <artifactId>org.eclipse.osgi.services</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon</groupId>
@@ -50,8 +63,8 @@
                             org.wso2.carbon.cluster.coordinator.commons.*;version="${carbon.coordination.exp.package.version}"
                         </Export-Package>
                         <Import-Package>
-                            com.google.common.*;version="${guava.imp.package.version}",
-                            org.apache.commons.logging.*;version="${commons.logging.imp.package.version}",
+                            org.osgi.framework.*;version="[1.8.0, 2.0.0)",
+                            org.wso2.carbon.kernel;version="[5.0.0, 6.0.0)",
                             *;resolution:=optional
                         </Import-Package>
                     </instructions>
@@ -59,5 +72,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

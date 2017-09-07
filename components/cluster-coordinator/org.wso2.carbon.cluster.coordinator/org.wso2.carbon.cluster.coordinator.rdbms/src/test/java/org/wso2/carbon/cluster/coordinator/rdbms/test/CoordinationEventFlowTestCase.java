@@ -154,8 +154,7 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
             throws InterruptedException {
         int count;
         String leaderId = null;
-        RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeFour = new RDBMSCoordinationStrategy(
-                dataSource);
+        RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeFour = new RDBMSCoordinationStrategy(dataSource);
         Map<String, Object> nodeFourPropertyMap = new HashMap<>();
         nodeFourPropertyMap.put("id", "node4");
         rdbmsCoordinationStrategyNodeFour.joinGroup("testGroupOne", nodeFourPropertyMap);

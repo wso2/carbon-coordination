@@ -15,8 +15,7 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <parent>
         <groupId>org.wso2</groupId>
@@ -26,7 +25,7 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.carbon.coordination</groupId>
-    <artifactId>org.wso2.carbon.cluster.coordinator.parent</artifactId>
+    <artifactId>carbon-coordination</artifactId>
     <packaging>pom</packaging>
     <version>2.0.0-SNAPSHOT</version>
     <name>WSO2 Carbon Coordination - Parent</name>
@@ -139,6 +138,16 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven.surefire.plugin.version}</version>
+                    <configuration>
+                        <systemPropertyVariables>
+                            <jacoco-agent.destfile>target/jacoco.exec</jacoco-agent.destfile>
+                        </systemPropertyVariables>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -183,6 +192,26 @@
                         <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
                     </suiteXmlFiles>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <preparationGoals>clean install</preparationGoals>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
@@ -254,6 +283,30 @@
                 <artifactId>curator-recipes</artifactId>
                 <version>${curator.recipies.version}</version>
             </dependency>
+
+            <!-- OSGi Dependencies-->
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.core</artifactId>
+                <version>${osgi.api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.eclipse.osgi</groupId>
+                <artifactId>org.eclipse.osgi</artifactId>
+                <version>${equinox.osgi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.eclipse.osgi</groupId>
+                <artifactId>org.eclipse.osgi.services</artifactId>
+                <version>${equinox.osgi.services.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jacoco</groupId>
+                <artifactId>org.jacoco.agent</artifactId>
+                <classifier>runtime</classifier>
+                <version>${jacoco.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
@@ -264,6 +317,7 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.connector.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.testng</groupId>
@@ -278,12 +332,20 @@
         <carbon.coordination.version>2.0.0-SNAPSHOT</carbon.coordination.version>
         <carbon.coordination.exp.package.version>${carbon.coordination.version}
         </carbon.coordination.exp.package.version>
+        <jacoco.version>0.7.9</jacoco.version>
 
         <curator.framework.version>2.6.0</curator.framework.version>
         <apache.zookeeper.version>3.4.6</apache.zookeeper.version>
         <zookeeper.imp.package.version>[3.4,4.0)</zookeeper.imp.package.version>
         <curator.recipies.version>2.6.0</curator.recipies.version>
         <org.snakeyaml.version>1.16.0.wso2v1</org.snakeyaml.version>
+
+        <!-- OSGI -->
+        <osgi.api.version>6.0.0</osgi.api.version>
+        <equinox.osgi.version>3.11.0.v20160603-1336</equinox.osgi.version>
+        <equinox.osgi.services.version>3.4.0.v20140312-2051</equinox.osgi.services.version>
+        <osgi.framework.import.version.range>[1.8.0, 2.0.0)</osgi.framework.import.version.range>
+        <osgi.service.tracker.import.version.range>[1.5.1, 2.0.0)</osgi.service.tracker.import.version.range>
 
         <maven.scr.version>1.21.0</maven.scr.version>
         <carbon.feature.plugin.version>3.0.0</carbon.feature.plugin.version>
@@ -303,6 +365,9 @@
         <org.testing.version>6.9.10</org.testing.version>
 
         <mysql.connector.version>5.1.38</mysql.connector.version>
+        <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
+        <carbon.feature.plugin.version>3.1.0</carbon.feature.plugin.version>
+        <java.version>1.8</java.version>
 
     </properties>
 

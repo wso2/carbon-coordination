@@ -15,17 +15,18 @@
 
 package org.wso2.carbon.cluster.coordinator.rdbms;
 
+import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
+import org.wso2.carbon.cluster.coordinator.commons.internal.ClusterCoordinationServiceDataHolder;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.commons.util.CommunicationBusContext;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEvent;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
-import org.wso2.carbon.cluster.coordinator.rdbms.internal.ds.RDBMSClusterCoordinatorServiceHolder;
+import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSClusterCoordinatorServiceHolder;
 import org.wso2.carbon.cluster.coordinator.rdbms.util.RDBMSConstants;
 import org.wso2.carbon.datasource.core.api.DataSourceService;
-import org.wso2.carbon.datasource.core.beans.CarbonDataSource;
 import org.wso2.carbon.datasource.core.exception.DataSourceException;
 
 import javax.sql.DataSource;
@@ -59,17 +60,14 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
     private DataSource datasource;
 
     public RDBMSCommunicationBusContextImpl() {
-
+        Map<String, Object> clusterConfiguration = ClusterCoordinationServiceDataHolder.getClusterConfiguration();
+        String datasourceName = (String) clusterConfiguration.
+                getOrDefault("datasource", "WSO2_CLUSTER_DB");
         DataSourceService dataSourceService = RDBMSClusterCoordinatorServiceHolder.getDataSourceService();
-        CarbonDataSource carbonDataSource = null;
         try {
-            Object datasource = dataSourceService.getDataSource("datasourceName");
-            if (datasource instanceof CarbonDataSource) {
-                carbonDataSource = (CarbonDataSource) dataSourceService.getDataSource("datasourceName");
-                this.datasource = (DataSource) carbonDataSource.getDataSourceObject();
-            }
+            this.datasource = (HikariDataSource) dataSourceService.getDataSource(datasourceName);
         } catch (DataSourceException e) {
-            throw new ClusterCoordinationException("Error in initializing the datasource", e);
+            throw new ClusterCoordinationException("Error in initializing the datasource " + datasourceName, e);
         }
         createTables();
     }
