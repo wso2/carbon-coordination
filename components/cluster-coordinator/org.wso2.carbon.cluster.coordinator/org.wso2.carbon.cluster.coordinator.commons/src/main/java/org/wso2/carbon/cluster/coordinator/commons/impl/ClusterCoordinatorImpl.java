@@ -73,6 +73,7 @@ public class ClusterCoordinatorImpl implements ClusterCoordinator {
      */
     @Override
     public void registerEventListener(String groupId, MemberEventListener memberEventListener) {
+        memberEventListener.setGroupId(groupId);
         this.coordinationStrategy.registerEventListener(memberEventListener);
     }
 

@@ -24,6 +24,8 @@ import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordination
 import org.wso2.carbon.cluster.coordinator.commons.internal.ClusterCoordinationServiceDataHolder;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
+import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSClusterCoordinatorServiceHolder;
+import org.wso2.carbon.kernel.configprovider.CarbonConfigurationException;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;
@@ -114,8 +116,10 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         // Maximum age of a heartbeat. After this much of time, the heartbeat is considered invalid and node is
         // considered to have left the cluster.
         this.heartbeatMaxAge = heartBeatInterval * 2;
-        this.localNodeId = generateRandomId();
-
+        this.localNodeId = ClusterCoordinationServiceDataHolder.getNodeId();
+        if (this.localNodeId == null) {
+            this.localNodeId = generateRandomId();
+        }
         this.communicationBusContext = communicationBusContext;
         this.rdbmsMemberEventProcessor = new RDBMSMemberEventProcessor(localNodeId, communicationBusContext);
     }

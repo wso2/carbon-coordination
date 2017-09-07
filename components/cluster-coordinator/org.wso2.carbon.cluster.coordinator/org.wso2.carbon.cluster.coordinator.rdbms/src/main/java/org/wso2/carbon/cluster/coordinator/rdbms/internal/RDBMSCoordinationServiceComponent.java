@@ -54,16 +54,18 @@ public class RDBMSCoordinationServiceComponent {
     @Activate
     protected void start(BundleContext bundleContext) {
 
-        Map clusterConfiguration = ClusterCoordinationServiceDataHolder.getClusterConfiguration();
-        if (clusterConfiguration == null) {
+        Map<String, Object> clusterConfiguration = null;
+        try {
+            clusterConfiguration = ClusterCoordinationServiceDataHolder.getConfigProvider().
+                    getConfigurationMap("ha.config");
+            ClusterCoordinationServiceDataHolder.setClusterConfiguration(clusterConfiguration);
+        } catch (CarbonConfigurationException e) {
             throw new RDBMSClusterCoordinatorConfiurationException("Configurations for RDBMS based HA deployment" +
                     " is not available in deployment.yaml");
         }
         if ((boolean) clusterConfiguration.get("enabled") &&
                 clusterConfiguration.get("coordination.strategy.class").equals("RDBMSCoordinationStrategy")) {
-            RDBMSCoordinationStrategy rdbmsCoordinationStrategy = null;
-            rdbmsCoordinationStrategy = new RDBMSCoordinationStrategy();
-            bundleContext.registerService(CoordinationStrategy.class, rdbmsCoordinationStrategy, null);
+            bundleContext.registerService(CoordinationStrategy.class, new RDBMSCoordinationStrategy(), null);
             log.info("RDBMS Coordination Service Component Activated");
         } else {
             throw new RDBMSClusterCoordinatorConfiurationException("HA deployment using RDBMSCoordinationStrategy " +
@@ -89,14 +91,13 @@ public class RDBMSCoordinationServiceComponent {
             unbind = "unregisterConfigProvider"
     )
     protected void registerConfigProvider(ConfigProvider configProvider) throws CarbonConfigurationException {
-        Map<String, Object> clusterConfiguration = configProvider.getConfigurationMap("ha.config");
-        if (clusterConfiguration != null) {
-            ClusterCoordinationServiceDataHolder.setClusterConfiguration(clusterConfiguration);
-        }
+        ClusterCoordinationServiceDataHolder.setConfigProvider(configProvider);
+        String nodeId = (String) configProvider.getConfigurationMap("wso2.carbon").get("id");
+        ClusterCoordinationServiceDataHolder.setNodeId(nodeId);
     }
 
     protected void unregisterConfigProvider(ConfigProvider configProvider) {
-        ClusterCoordinationServiceDataHolder.setClusterConfiguration(null);
+        ClusterCoordinationServiceDataHolder.setConfigProvider(null);
     }
 
     @Reference(

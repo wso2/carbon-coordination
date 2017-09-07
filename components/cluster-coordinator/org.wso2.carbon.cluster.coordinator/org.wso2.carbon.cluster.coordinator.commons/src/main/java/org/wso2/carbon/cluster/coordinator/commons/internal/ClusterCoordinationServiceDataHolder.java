@@ -16,6 +16,7 @@
 package org.wso2.carbon.cluster.coordinator.commons.internal;
 
 import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
+import org.wso2.carbon.kernel.configprovider.ConfigProvider;
 
 import java.util.Map;
 
@@ -35,6 +36,10 @@ public class ClusterCoordinationServiceDataHolder {
      */
     private static Map<String, Object> clusterConfiguration;
 
+    private static ConfigProvider configProvider;
+
+    private static String nodeId;
+
     public static CoordinationStrategy getCoordinationStrategy() {
         return coordinationStrategy;
     }
@@ -51,4 +56,19 @@ public class ClusterCoordinationServiceDataHolder {
         ClusterCoordinationServiceDataHolder.clusterConfiguration = clusterConfiguration;
     }
 
+    public static ConfigProvider getConfigProvider() {
+        return configProvider;
+    }
+
+    public static void setConfigProvider(ConfigProvider configProvider) {
+        ClusterCoordinationServiceDataHolder.configProvider = configProvider;
+    }
+
+    public static String getNodeId() {
+        return nodeId;
+    }
+
+    public static void setNodeId(String nodeId) {
+        ClusterCoordinationServiceDataHolder.nodeId = nodeId;
+    }
 }
