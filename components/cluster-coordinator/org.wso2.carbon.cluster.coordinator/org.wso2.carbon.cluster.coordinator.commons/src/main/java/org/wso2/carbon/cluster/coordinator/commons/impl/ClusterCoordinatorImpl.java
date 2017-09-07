@@ -13,10 +13,13 @@
  * limitations under the License.
  */
 
-package org.wso2.carbon.cluster.coordinator.commons;
+package org.wso2.carbon.cluster.coordinator.commons.impl;
 
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationStrategyConfiguration;
-import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
+import org.wso2.carbon.cluster.coordinator.commons.MemberEventListener;
+import org.wso2.carbon.cluster.coordinator.commons.api.ClusterCoordinator;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 
 import java.util.List;
@@ -25,34 +28,17 @@ import java.util.Map;
 /**
  * The OSGI service class for the coordinator algorithm.
  */
-public class ClusterCoordinator {
+public class ClusterCoordinatorImpl implements ClusterCoordinator {
+
+    private final static Log log = LogFactory.getLog(ClusterCoordinatorImpl.class);
 
     /**
-     * Creates a new instance of the ClusterCoordinator class.
+     * Creates a new instance of the ClusterCoordinatorImpl class.
      */
-    private static ClusterCoordinator instance = new ClusterCoordinator();
     private CoordinationStrategy coordinationStrategy;
 
-    private ClusterCoordinator() {
-        CoordinationStrategyConfiguration coordinationStrategyConfiguration = CoordinationStrategyConfiguration
-                .getInstance();
-        ClusterCoordinator.class.getClassLoader();
-        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-        try {
-            this.coordinationStrategy = (CoordinationStrategy) classLoader
-                    .loadClass(coordinationStrategyConfiguration.getStrategy()).newInstance();
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            throw new ClusterCoordinationException("Error when initializing coordinator strategy", e);
-        }
-    }
-
-    /**
-     * Get the created instance of the current class.
-     *
-     * @return the created instance of the Clustercoordinator class
-     */
-    public static ClusterCoordinator getInstance() {
-        return instance;
+    public ClusterCoordinatorImpl(CoordinationStrategy coordinationStrategy) {
+        this.coordinationStrategy = coordinationStrategy;
     }
 
     /**
@@ -61,6 +47,7 @@ public class ClusterCoordinator {
      * @param groupId the group Id of the required node details
      * @return the node details of the current group
      */
+    @Override
     public List<NodeDetail> getAllNodeDetails(String groupId) {
         return coordinationStrategy.getAllNodeDetails(groupId);
     }
@@ -72,6 +59,7 @@ public class ClusterCoordinator {
      *                return the  leader node ID of the current cluster group
      * @return The leader node object of the current group
      */
+    @Override
     public NodeDetail getLeaderNode(String groupId) {
         return coordinationStrategy.getLeaderNode(groupId);
     }
@@ -83,6 +71,7 @@ public class ClusterCoordinator {
      * @param groupId             Group ID of the group
      * @param memberEventListener The listener which should listen to the group events
      */
+    @Override
     public void registerEventListener(String groupId, MemberEventListener memberEventListener) {
         this.coordinationStrategy.registerEventListener(memberEventListener);
     }
@@ -92,6 +81,7 @@ public class ClusterCoordinator {
      *
      * @param groupId the group Id of the needed cluster group
      */
+    @Override
     public void joinGroup(String groupId, Map<String, Object> propertiesMap) {
         this.coordinationStrategy.joinGroup(groupId, propertiesMap);
     }

@@ -27,9 +27,8 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
 import org.wso2.carbon.cluster.coordinator.commons.MemberEventListener;
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationStrategyConfiguration;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
+import org.wso2.carbon.cluster.coordinator.commons.internal.ClusterCoordinationServiceDataHolder;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.zookeeper.util.ZooKeeperService;
 
@@ -56,8 +55,8 @@ public class ZookeeperCoordinationStrategy implements CoordinationStrategy {
     private String zkURL;
 
     public ZookeeperCoordinationStrategy() throws IOException {
-        this.zkURL = CoordinationStrategyConfiguration.getInstance().getZooKeeperConfigs()
-                .get(CoordinationPropertyNames.ZOOKEEPER_CONNECTION_STRING);
+        Map<String, Object> clusterConfiguration = ClusterCoordinationServiceDataHolder.getClusterConfiguration();
+        this.zkURL = (String) clusterConfiguration.get("connection.string");
         zooKeeperService = new ZooKeeperService(this.zkURL, new ProcessNodeWatcher());
         listeners = new ArrayList<>();
     }

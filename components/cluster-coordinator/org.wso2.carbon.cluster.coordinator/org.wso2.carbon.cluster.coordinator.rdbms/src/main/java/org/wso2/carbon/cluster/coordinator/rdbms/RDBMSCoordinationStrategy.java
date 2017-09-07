@@ -20,9 +20,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
 import org.wso2.carbon.cluster.coordinator.commons.MemberEventListener;
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationStrategyConfiguration;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
+import org.wso2.carbon.cluster.coordinator.commons.internal.ClusterCoordinationServiceDataHolder;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
 
@@ -97,12 +96,16 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
     }
 
     private RDBMSCoordinationStrategy(RDBMSCommunicationBusContextImpl communicationBusContext) {
+
+        Map<String, Object> clusterConfiguration = ClusterCoordinationServiceDataHolder.getClusterConfiguration();
+        if (clusterConfiguration != null) {
+            this.heartBeatInterval = (int) clusterConfiguration.getOrDefault("heart.beat.interval", 1000);
+        } else {
+            this.heartBeatInterval = 1000;
+        }
         ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("RDBMSCoordinationStrategy-%d").build();
-        this.threadExecutor = Executors.newScheduledThreadPool(CoordinationStrategyConfiguration.getInstance()
-                .getRdbmsConfigs().get("heartbeatInterval"), namedThreadFactory);
-        this.heartBeatInterval = CoordinationStrategyConfiguration.getInstance().getRdbmsConfigs()
-                .get(CoordinationPropertyNames.RDBMS_BASED_COORDINATION_HEARTBEAT_INTERVAL);
+        this.threadExecutor = Executors.newScheduledThreadPool(10, namedThreadFactory);
         // Maximum age of a heartbeat. After this much of time, the heartbeat is considered invalid and node is
         // considered to have left the cluster.
         this.heartbeatMaxAge = heartBeatInterval * 2;

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package org.wso2.carbon.cluster.coordinator.rdbms.internal.ds;
+package org.wso2.carbon.cluster.coordinator.rdbms.internal;
 
 import org.wso2.carbon.datasource.core.api.DataSourceService;
 

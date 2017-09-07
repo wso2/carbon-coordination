@@ -19,12 +19,12 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.cluster.coordinator.commons.MemberEventListener;
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationStrategyConfiguration;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
+import org.wso2.carbon.cluster.coordinator.commons.internal.ClusterCoordinationServiceDataHolder;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -67,10 +67,15 @@ public class RDBMSMemberEventProcessor {
      *
      * @param nodeId the node ID of the node which starts the listening
      */
-    public void addNewListenerTask(String nodeId) {
+    private void addNewListenerTask(String nodeId) {
+        Map<String, Object> clusterConfiguration = ClusterCoordinationServiceDataHolder.getClusterConfiguration();
+        int scheduledPeriod;
+        if (clusterConfiguration != null) {
+            scheduledPeriod = (int) clusterConfiguration.getOrDefault("event.polling.interval", 1000);
+        } else {
+            scheduledPeriod = 1000;
+        }
         membershipListenerTask = new RDBMSMemberEventListenerTask(nodeId, communicationBusContext);
-        int scheduledPeriod = CoordinationStrategyConfiguration.getInstance().getRdbmsConfigs()
-                .get(CoordinationPropertyNames.RDBMS_BASED_EVENT_POLLING_INTERVAL);
         this.clusterMembershipReaderTaskScheduler.scheduleWithFixedDelay(membershipListenerTask,
                 scheduledPeriod, scheduledPeriod, TimeUnit.MILLISECONDS);
         if (logger.isDebugEnabled()) {
@@ -95,9 +100,8 @@ public class RDBMSMemberEventProcessor {
      * @throws ClusterCoordinationException
      */
     public void notifyMembershipEvent(String nodeID, String groupID, List<String> nodes,
-            MemberEventType membershipEventType) throws ClusterCoordinationException {
-        this.communicationBusContext
-                .storeMembershipEvent(nodeID, groupID, nodes, membershipEventType.getCode());
+                                      MemberEventType membershipEventType) throws ClusterCoordinationException {
+        this.communicationBusContext.storeMembershipEvent(nodeID, groupID, nodes, membershipEventType.getCode());
     }
 
     /**
