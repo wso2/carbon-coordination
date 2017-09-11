@@ -25,19 +25,21 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
+import org.wso2.carbon.cluster.coordinator.commons.internal.ClusterCoordinationServiceDataHolder;
 import org.wso2.carbon.cluster.coordinator.zookeeper.ZookeeperCoordinationStrategy;
+import org.wso2.carbon.cluster.coordinator.zookeeper.exception.ZookeeperClusterCoordinatorConfiurationException;
 import org.wso2.carbon.kernel.configprovider.CarbonConfigurationException;
 import org.wso2.carbon.kernel.configprovider.ConfigProvider;
 
+import java.io.IOException;
 import java.util.Map;
 
 /**
- * RDBMS cluster coordinator data service.
+ * Zookeeper cluster coordinator data service.
  */
 @Component(
-        name = "org.wso2.carbon.cluster.coordinator.rdbms.internal.ZookeeperCoordinationServiceComponent",
+        name = "org.wso2.carbon.cluster.coordinator.zookeeper.internal.ZookeeperCoordinationServiceComponent",
         immediate = true
-//        property = {"componentName=rdbms-coordination-service"}
 )
 public class ZookeeperCoordinationServiceComponent {
 
@@ -49,22 +51,35 @@ public class ZookeeperCoordinationServiceComponent {
     private Map clusterConfiguration;
 
     /**
-     * This is the activation method of ZookeeperCoordinationServiceComponent. This will be called when its references are
-     * satisfied.
+     * This is the activation method of ZookeeperCoordinationServiceComponent. This will be called when its references
+     * are satisfied.
      *
      * @param bundleContext the bundle context instance of this bundle.
      * @throws Exception this will be thrown if an issue occurs while executing the activate method
      */
     @Activate
-    protected void start(BundleContext bundleContext) throws Exception {
+    protected void start(BundleContext bundleContext) {
 
         log.info("Getting the Coordination Strategy");
 
-        if (clusterConfiguration.get("mode").equals("ha") &&
-                clusterConfiguration.get("coordination.strategy.class").equals("RDBMSCoordinationStrategy")) {
+        Map<String, Object> clusterConfiguration = null;
+        try {
+            clusterConfiguration = ClusterCoordinationServiceDataHolder.getConfigProvider().
+                    getConfigurationMap("ha.config");
+            ClusterCoordinationServiceDataHolder.setClusterConfiguration(clusterConfiguration);
+        } catch (CarbonConfigurationException e) {
+            throw new ZookeeperClusterCoordinatorConfiurationException("Configurations for Zookeeper based HA" +
+                    " deployment is not available in deployment.yaml");
+        }
+        if ((boolean) clusterConfiguration.get("enabled") &&
+                clusterConfiguration.get("coordination.strategy.class").equals("ZookeeperCoordinationStrategy")) {
             ZookeeperCoordinationStrategy zookeeperCoordinationStrategy = null;
 
-            zookeeperCoordinationStrategy = new ZookeeperCoordinationStrategy();
+            try {
+                zookeeperCoordinationStrategy = new ZookeeperCoordinationStrategy();
+            } catch (IOException e) {
+                throw new ZookeeperClusterCoordinatorConfiurationException("Zookeeper Service can not be found", e);
+            }
 
             bundleContext.registerService(CoordinationStrategy.class, zookeeperCoordinationStrategy, null);
 
@@ -82,7 +97,7 @@ public class ZookeeperCoordinationServiceComponent {
      */
     @Deactivate
     protected void stop() throws Exception {
-
+        ClusterCoordinationServiceDataHolder.setClusterConfiguration(null);
     }
 
     @Reference(
@@ -93,12 +108,9 @@ public class ZookeeperCoordinationServiceComponent {
             unbind = "unregisterConfigProvider"
     )
     protected void registerConfigProvider(ConfigProvider configProvider) throws CarbonConfigurationException {
-        Map clusterConfiguration = configProvider.getConfigurationMap("cluster.config");
-        if (clusterConfiguration != null && (boolean) clusterConfiguration.get("enabled")) {
-            this.clusterConfiguration = clusterConfiguration;
-        } else {
-            log.info("Clustering has not been enabled. Zookeeper clustering will not be checked");
-        }
+        ClusterCoordinationServiceDataHolder.setConfigProvider(configProvider);
+        String nodeId = (String) configProvider.getConfigurationMap("wso2.carbon").get("id");
+        ClusterCoordinationServiceDataHolder.setNodeId(nodeId);
     }
 
     protected void unregisterConfigProvider(ConfigProvider configProvider) {

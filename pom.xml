@@ -361,6 +361,7 @@
         <commons.logging.imp.package.version>[1.2,2.0)</commons.logging.imp.package.version>
         <guava.version>19.0</guava.version>
         <guava.imp.package.version>[19.0,20.0)</guava.imp.package.version>
+        <apache.curator.imp.package.version>[2.6.0,2.9.0)</apache.curator.imp.package.version>
         <com.h2database.version>1.4.187</com.h2database.version>
         <org.testing.version>6.9.10</org.testing.version>
 

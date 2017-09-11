@@ -80,7 +80,7 @@ public class RDBMSCoordinationServiceComponent {
      */
     @Deactivate
     protected void stop() {
-
+        ClusterCoordinationServiceDataHolder.setClusterConfiguration(null);
     }
 
     @Reference(
