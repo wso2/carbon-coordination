@@ -15,19 +15,21 @@
 
 package org.wso2.carbon.cluster.coordinator.rdbms;
 
+
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
 import org.wso2.carbon.cluster.coordinator.commons.MemberEventListener;
+import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
-import org.wso2.carbon.cluster.coordinator.commons.internal.ClusterCoordinationServiceDataHolder;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
-import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSClusterCoordinatorServiceHolder;
+import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
+import org.wso2.carbon.cluster.coordinator.rdbms.util.RDBMSConstants;
 import org.wso2.carbon.kernel.configprovider.CarbonConfigurationException;
+import org.wso2.carbon.kernel.configprovider.ConfigProvider;
 
-import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +38,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import javax.sql.DataSource;
 
 /**
  * This class controls the overall process of RDBMS coordination.
@@ -45,7 +48,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
     /**
      * Class logger.
      */
-    private final static Log logger = LogFactory.getLog(RDBMSCoordinationStrategy.class);
+    private static Log logger = LogFactory.getLog(RDBMSCoordinationStrategy.class);
 
     /**
      * Heartbeat interval in seconds.
@@ -78,6 +81,11 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
     private String localNodeId;
 
     /**
+     * Identifier used to identify the cluster group
+     */
+    private String localGroupId;
+
+    /**
      * Possible node states
      *
      * +-----------+            +-------------+
@@ -104,34 +112,60 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
 
     private RDBMSCoordinationStrategy(RDBMSCommunicationBusContextImpl communicationBusContext) {
 
-        Map<String, Object> clusterConfiguration = ClusterCoordinationServiceDataHolder.getClusterConfiguration();
+        Map<String, Object> clusterConfiguration = RDBMSCoordinationServiceHolder.getClusterConfiguration();
         if (clusterConfiguration != null) {
-            this.heartBeatInterval = (int) clusterConfiguration.getOrDefault("heart.beat.interval", 1000);
+            Map<String, Object> strategyConfiguration = (Map<String, Object>) clusterConfiguration.
+                    get(CoordinationPropertyNames.STRATEGY_CONFIG_NS);
+            if (strategyConfiguration != null) {
+                this.heartBeatInterval = (int) strategyConfiguration.
+                        getOrDefault(RDBMSConstants.HEART_BEAT_INTERVAL, 1000);
+                // Maximum age of a heartbeat. After this much of time, the heartbeat is considered invalid and node is
+                // considered to have left the cluster.
+                this.heartbeatMaxAge = heartBeatInterval *
+                        (int) strategyConfiguration.getOrDefault(RDBMSConstants.HEART_BEAT_MAX_AGE, 2);
+                this.localGroupId = (String) clusterConfiguration.get(CoordinationPropertyNames.GROUP_ID_PROPERTY);
+            } else {
+                throw new ClusterCoordinationException("Strategy Configurations not found in" +
+                        " deployment.yaml, please check " + CoordinationPropertyNames.STRATEGY_CONFIG_NS + " under "
+                        + CoordinationPropertyNames.CLUSTER_CONFIG_NS + " namespace configurations");
+            }
         } else {
-            this.heartBeatInterval = 1000;
+            throw new ClusterCoordinationException("Cluster Configurations not found in" +
+                    " deployment.yaml, please check " + CoordinationPropertyNames.CLUSTER_CONFIG_NS +
+                    " namespace configurations");
+        }
+        if (this.localGroupId == null) {
+            throw new ClusterCoordinationException(
+                    "Group Id not set in cluster.config in deployment.yaml configuration file");
         }
         ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("RDBMSCoordinationStrategy-%d").build();
-        this.threadExecutor = Executors.newScheduledThreadPool(10, namedThreadFactory);
-        // Maximum age of a heartbeat. After this much of time, the heartbeat is considered invalid and node is
-        // considered to have left the cluster.
-        this.heartbeatMaxAge = heartBeatInterval * 2;
-        this.localNodeId = ClusterCoordinationServiceDataHolder.getNodeId();
-        if (this.localNodeId == null) {
-            this.localNodeId = generateRandomId();
+        this.threadExecutor = Executors.newSingleThreadScheduledExecutor(namedThreadFactory);
+        try {
+            ConfigProvider configProvider = RDBMSCoordinationServiceHolder.getConfigProvider();
+            if (configProvider != null) {
+                this.localNodeId = (String) configProvider.getConfigurationMap("wso2.carbon").get("id");
+            } else {
+                logger.warn("The id of the server has not been set in wso2.carbon namespace of deployment.yaml." +
+                        " Some features may not work correctly unless this configuration is specified.");
+                this.localNodeId = generateRandomId();
+            }
+        } catch (CarbonConfigurationException e) {
+            throw new ClusterCoordinationException("The id has not been set in wso2.carbon namespace under" +
+                    " the id property.");
         }
         this.communicationBusContext = communicationBusContext;
         this.rdbmsMemberEventProcessor = new RDBMSMemberEventProcessor(localNodeId, communicationBusContext);
     }
 
     @Override
-    public List<NodeDetail> getAllNodeDetails(String groupId) throws ClusterCoordinationException {
-        return communicationBusContext.getAllNodeData(groupId);
+    public List<NodeDetail> getAllNodeDetails() throws ClusterCoordinationException {
+        return communicationBusContext.getAllNodeData(localGroupId);
     }
 
     @Override
-    public NodeDetail getLeaderNode(String groupID) {
-        List<NodeDetail> nodeDetails = communicationBusContext.getAllNodeData(groupID);
+    public NodeDetail getLeaderNode() {
+        List<NodeDetail> nodeDetails = communicationBusContext.getAllNodeData(localGroupId);
         for (NodeDetail nodeDetail : nodeDetails) {
             if (nodeDetail.isCoordinator()) {
                 return nodeDetail;
@@ -141,20 +175,54 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
     }
 
     @Override
-    public void joinGroup(String groupId, Map<String, Object> propertiesMap) {
-        //clear old membership events for the node
-        communicationBusContext.clearMembershipEvents(localNodeId, groupId);
+    public boolean isLeaderNode() {
+        NodeDetail nodeDetail = communicationBusContext.getNodeData(localNodeId, localGroupId);
+        return nodeDetail.isCoordinator();
+    }
 
-        CoordinatorElectionTask coordinatorElectionTask = new CoordinatorElectionTask(localNodeId,
-                groupId, propertiesMap);
-        threadExecutor.scheduleAtFixedRate(coordinatorElectionTask, 0,
-                heartBeatInterval, TimeUnit.MILLISECONDS);
+    @Override
+    public void joinGroup() {
+        joinGroup(null);
+    }
+
+    @Override
+    public void joinGroup(Map<String, Object> propertiesMap) {
+        //clear old membership events for the node
+        communicationBusContext.clearMembershipEvents(localNodeId, localGroupId);
+        NodeDetail nodeDetail = communicationBusContext.getNodeData(localNodeId, localGroupId);
+        boolean isNodeExist = false;
+        if (nodeDetail != null) {
+            // This check is done to verify if the node details in the database are of an inactive node.
+            // This check would fail if a node goes down and is restarted before the heart beat value expires.
+            // Assumed that this case doesn't happen since node startup time is greater than hear beat value by default.
+            // Restarting the server again so that heart beat values expires will solve this issue.
+            long lastHeartBeat = nodeDetail.getLastHeartbeat();
+            long currentTimeMillis = System.currentTimeMillis();
+            long heartbeatAge = currentTimeMillis - lastHeartBeat;
+            isNodeExist = (heartbeatAge < heartbeatMaxAge);
+        }
+
+        if (!isNodeExist) {
+            CoordinatorElectionTask coordinatorElectionTask = new CoordinatorElectionTask(localNodeId,
+                    localGroupId, propertiesMap);
+            this.threadExecutor.scheduleAtFixedRate(coordinatorElectionTask, 0,
+                    heartBeatInterval, TimeUnit.MILLISECONDS);
+        } else {
+            throw new ClusterCoordinationException("Node with ID " + localNodeId + " in group " + localGroupId +
+                    " already exists.");
+        }
     }
 
     @Override
     public void registerEventListener(MemberEventListener memberEventListener) {
         // Register listener for membership changes
+        memberEventListener.setGroupId(localGroupId);
         rdbmsMemberEventProcessor.addEventListener(memberEventListener);
+    }
+
+    @Override
+    public void setPropertiesMap(Map<String, Object> propertiesMap) {
+        communicationBusContext.updatePropertiesMap(localNodeId, localGroupId, propertiesMap);
     }
 
     public void stop() {
@@ -230,7 +298,6 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         /**
          * Perform periodic task that should be done by a MEMBER node.
          *
-         * @return next NodeStatus
          * @throws ClusterCoordinationException
          * @throws InterruptedException
          */
@@ -263,7 +330,6 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         /**
          * Perform periodic task that should be done by a Coordinating node.
          *
-         * @return next NodeState
          * @throws ClusterCoordinationException
          * @throws InterruptedException
          */
@@ -362,7 +428,6 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         /**
          * Perform new coordinator election task.
          *
-         * @return next NodeState
          * @throws InterruptedException
          */
         private void performElectionTask() throws InterruptedException {

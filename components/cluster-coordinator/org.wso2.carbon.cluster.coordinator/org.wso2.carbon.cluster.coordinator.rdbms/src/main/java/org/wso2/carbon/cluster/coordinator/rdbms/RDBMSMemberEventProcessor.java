@@ -19,9 +19,11 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.cluster.coordinator.commons.MemberEventListener;
+import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
-import org.wso2.carbon.cluster.coordinator.commons.internal.ClusterCoordinationServiceDataHolder;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
+import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
+import org.wso2.carbon.cluster.coordinator.rdbms.util.RDBMSConstants;
 
 import java.util.List;
 import java.util.Map;
@@ -68,12 +70,16 @@ public class RDBMSMemberEventProcessor {
      * @param nodeId the node ID of the node which starts the listening
      */
     private void addNewListenerTask(String nodeId) {
-        Map<String, Object> clusterConfiguration = ClusterCoordinationServiceDataHolder.getClusterConfiguration();
+        Map<String, Object> strategyConfiguration = (Map<String, Object>) RDBMSCoordinationServiceHolder.
+                getClusterConfiguration().get(CoordinationPropertyNames.STRATEGY_CONFIG_NS);
         int scheduledPeriod;
-        if (clusterConfiguration != null) {
-            scheduledPeriod = (int) clusterConfiguration.getOrDefault("event.polling.interval", 1000);
+        if (strategyConfiguration != null) {
+            scheduledPeriod = (int) strategyConfiguration.
+                    getOrDefault(RDBMSConstants.EVENT_POLLING_INTERVAL, 1000);
         } else {
-            scheduledPeriod = 1000;
+            throw new ClusterCoordinationException("Cluster Configurations not found in" +
+                    " deployment.yaml, please check " + CoordinationPropertyNames.CLUSTER_CONFIG_NS +
+                    " namespace configurations");
         }
         membershipListenerTask = new RDBMSMemberEventListenerTask(nodeId, communicationBusContext);
         this.clusterMembershipReaderTaskScheduler.scheduleWithFixedDelay(membershipListenerTask,
@@ -116,10 +122,9 @@ public class RDBMSMemberEventProcessor {
     /**
      * Remove a previously added listener.
      *
-     * @param groupId            groupID of the group, which listener removes from
      * @param membershipListener membership listener object
      */
-    public void removeEventListener(String groupId, MemberEventListener membershipListener) {
+    public void removeEventListener(MemberEventListener membershipListener) {
         membershipListenerTask.removeEventListener(membershipListener);
     }
 }

@@ -18,18 +18,17 @@ package org.wso2.carbon.cluster.coordinator.rdbms;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
-import org.wso2.carbon.cluster.coordinator.commons.internal.ClusterCoordinationServiceDataHolder;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.commons.util.CommunicationBusContext;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEvent;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
-import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSClusterCoordinatorServiceHolder;
+import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
 import org.wso2.carbon.cluster.coordinator.rdbms.util.RDBMSConstants;
 import org.wso2.carbon.datasource.core.api.DataSourceService;
 import org.wso2.carbon.datasource.core.exception.DataSourceException;
 
-import javax.sql.DataSource;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -43,6 +42,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.sql.DataSource;
+
 
 /**
  * The RDBMS based communication bus layer for the nodes. This layer handles the database level calls.
@@ -50,9 +51,9 @@ import java.util.Map;
 public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext {
 
     /**
-     * The logger class
+     * The log class
      */
-    private static final Log logger = LogFactory.getLog(RDBMSCommunicationBusContextImpl.class);
+    private static final Log log = LogFactory.getLog(RDBMSCommunicationBusContextImpl.class);
 
     /**
      * The datasource which is used to be connected to the database.
@@ -60,12 +61,24 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
     private DataSource datasource;
 
     public RDBMSCommunicationBusContextImpl() {
-        Map<String, Object> clusterConfiguration = ClusterCoordinationServiceDataHolder.getClusterConfiguration();
-        String datasourceName = (String) clusterConfiguration.
-                getOrDefault("datasource", "WSO2_CLUSTER_DB");
-        DataSourceService dataSourceService = RDBMSClusterCoordinatorServiceHolder.getDataSourceService();
+        Map<String, Object> strategyConfiguration = (Map<String, Object>) RDBMSCoordinationServiceHolder.
+                getClusterConfiguration().get(CoordinationPropertyNames.STRATEGY_CONFIG_NS);
+        if (strategyConfiguration == null) {
+            throw new ClusterCoordinationException("Configurations under name space "
+                    + CoordinationPropertyNames.STRATEGY_CONFIG_NS + " under "
+                    + CoordinationPropertyNames.CLUSTER_CONFIG_NS + " not specified in deployment.yaml");
+        }
+        String datasourceName = (String) strategyConfiguration.get(RDBMSConstants.RDBMS_COORDINATION_DS);
+        if (datasourceName == null) {
+            throw new ClusterCoordinationException("No datasource specified to be used with RDBMS Coordination" +
+                    "Strategy. Please check configurations under " + CoordinationPropertyNames.CLUSTER_CONFIG_NS);
+        }
+        DataSourceService dataSourceService = RDBMSCoordinationServiceHolder.getDataSourceService();
         try {
             this.datasource = (HikariDataSource) dataSourceService.getDataSource(datasourceName);
+            if (log.isDebugEnabled()) {
+                log.debug("Datasource " + datasourceName + " configured correctly");
+            }
         } catch (DataSourceException e) {
             throw new ClusterCoordinationException("Error in initializing the datasource " + datasourceName, e);
         }
@@ -98,6 +111,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             preparedStatement = connection.prepareStatement(RDBMSConstants.CREATE_LEADER_STATUS_TABLE);
             preparedStatement.execute();
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug("Leader Status Table Created Successfully");
+            }
         } catch (SQLException e) {
             throw new ClusterCoordinationException("Error in executing query.", e);
         } finally {
@@ -117,6 +133,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             preparedStatement = connection.prepareStatement(RDBMSConstants.CREATE_CLUSTER_NODE_STATUS_TABLE);
             preparedStatement.execute();
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug("Cluster Node Status Table Created Successfully");
+            }
         } catch (SQLException e) {
             throw new ClusterCoordinationException("Error in executing query.", e);
         } finally {
@@ -136,6 +155,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             preparedStatement = connection.prepareStatement(RDBMSConstants.CREATE_MEMBERSHIP_EVENT_TABLE);
             preparedStatement.execute();
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug("Membership Event Table Created Successfully");
+            }
         } catch (SQLException e) {
             throw new ClusterCoordinationException("Error in executing query.", e);
         } finally {
@@ -155,6 +177,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             preparedStatement = connection.prepareStatement(RDBMSConstants.CREATE_REMOVED_MEMBERS_TABLE);
             preparedStatement.execute();
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug("Removed Member Table Created Successfully");
+            }
         } catch (SQLException e) {
             throw new ClusterCoordinationException("Error in executing query.", e);
         } finally {
@@ -183,6 +208,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             }
             storeMembershipEventPreparedStatement.executeBatch();
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug(task + " executed successfully");
+            }
         } catch (SQLException e) {
             rollback(connection, task);
             throw new ClusterCoordinationException("Error storing membership change: " + membershipEventType +
@@ -207,14 +235,17 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                 String coordinatorNodeId;
                 if (resultSet.next()) {
                     coordinatorNodeId = resultSet.getString(1);
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Coordinator node ID: " + coordinatorNodeId + " for group : " + groupId);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Coordinator node ID: " + coordinatorNodeId + " for group : " + groupId);
                     }
                 } else {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("No coordinator present in database for group " + groupId);
+                    if (log.isDebugEnabled()) {
+                        log.debug("No coordinator present in database for group " + groupId);
                     }
                     coordinatorNodeId = null;
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug(RDBMSConstants.TASK_GET_COORDINATOR_INFORMATION + " executed successfully");
                 }
                 return coordinatorNodeId;
             } catch (SQLException e) {
@@ -249,7 +280,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                 connection.close();
             }
         } catch (SQLException e) {
-            logger.error("Failed to close connection after " + task, e);
+            log.error("Failed to close connection after " + task, e);
         }
     }
 
@@ -264,7 +295,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             try {
                 preparedStatement.close();
             } catch (SQLException e) {
-                logger.error("Closing prepared statement failed after " + task, e);
+                log.error("Closing prepared statement failed after " + task, e);
             }
         }
     }
@@ -280,7 +311,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             try {
                 connection.rollback();
             } catch (SQLException e) {
-                logger.warn("Rollback failed on " + task, e);
+                log.warn("Rollback failed on " + task, e);
             }
         }
     }
@@ -299,8 +330,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             preparedStatement.setString(1, nodeID);
             resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
-                MemberEvent membershipEvent = new MemberEvent(MemberEventType
-                        .getTypeFromInt(resultSet.getInt(RDBMSConstants.MEMBERSHIP_CHANGE_TYPE)),
+                MemberEvent membershipEvent = new MemberEvent(MemberEventType.getTypeFromInt(
+                        resultSet.getInt(RDBMSConstants.MEMBERSHIP_CHANGE_TYPE)),
                         resultSet.getString(RDBMSConstants.MEMBERSHIP_CHANGED_MEMBER_ID),
                         resultSet.getString(RDBMSConstants.GROUP_ID));
                 membershipEvents.add(membershipEvent);
@@ -309,6 +340,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             clearMembershipEvents.setString(1, nodeID);
             clearMembershipEvents.executeUpdate();
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug(task + " executed successfully");
+            }
             return membershipEvents;
         } catch (SQLException e) {
             throw new ClusterCoordinationException("Error occurred while " + task, e);
@@ -331,7 +365,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             try {
                 resultSet.close();
             } catch (SQLException e) {
-                logger.error("Closing result set failed after " + task, e);
+                log.error("Closing result set failed after " + task, e);
             }
         }
     }
@@ -350,6 +384,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             clearMembershipEvents = connection.prepareStatement(RDBMSConstants.PS_CLEAR_ALL_MEMBERSHIP_EVENTS);
             clearMembershipEvents.executeUpdate();
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug(task + " executed successfully");
+            }
         } catch (SQLException e) {
             rollback(connection, task);
             throw new ClusterCoordinationException("Error occurred while " + task, e);
@@ -372,6 +409,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             preparedStatement.setLong(3, System.currentTimeMillis());
             int updateCount = preparedStatement.executeUpdate();
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug(RDBMSConstants.TASK_ADD_MESSAGE_ID + " " + nodeId + " executed successfully");
+            }
             return updateCount != 0;
         } catch (SQLException e) {
             rollback(connection, RDBMSConstants.TASK_ADD_MESSAGE_ID);
@@ -396,15 +436,19 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             resultSet = preparedStatement.executeQuery();
             boolean isCoordinator;
             isCoordinator = resultSet.next();
+            if (log.isDebugEnabled()) {
+                log.debug(RDBMSConstants.TASK_CHECK_IS_COORDINATOR + " instance id: " + nodeId
+                        + " group ID: " + groupId + " executed successfully");
+            }
             return isCoordinator;
         } catch (SQLException e) {
-            String errMsg = RDBMSConstants.TASK_CHECK_COORDINATOR_VALIDITY + " instance id: " + nodeId
+            String errMsg = RDBMSConstants.TASK_CHECK_IS_COORDINATOR + " instance id: " + nodeId
                             + " group ID: " + groupId;
             throw new ClusterCoordinationException("Error occurred while " + errMsg, e);
         } finally {
-            close(resultSet, RDBMSConstants.TASK_CHECK_COORDINATOR_VALIDITY);
-            close(preparedStatement, RDBMSConstants.TASK_CHECK_COORDINATOR_VALIDITY);
-            close(connection, RDBMSConstants.TASK_CHECK_COORDINATOR_VALIDITY);
+            close(resultSet, RDBMSConstants.TASK_CHECK_IS_COORDINATOR);
+            close(preparedStatement, RDBMSConstants.TASK_CHECK_IS_COORDINATOR);
+            close(connection, RDBMSConstants.TASK_CHECK_IS_COORDINATOR);
         }
     }
 
@@ -421,6 +465,10 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             preparedStatementForCoordinatorUpdate.setString(3, groupId);
             int updateCount = preparedStatementForCoordinatorUpdate.executeUpdate();
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug(RDBMSConstants.TASK_UPDATE_COORDINATOR_HEARTBEAT + "node id " + nodeId
+                        + " executed successfully");
+            }
             return updateCount != 0;
         } catch (SQLException e) {
             rollback(connection, RDBMSConstants.TASK_UPDATE_COORDINATOR_HEARTBEAT);
@@ -449,25 +497,25 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                 long coordinatorHeartbeat = resultSet.getLong(1);
                 long heartbeatAge = currentTimeMillis - coordinatorHeartbeat;
                 isCoordinator = heartbeatAge <= heartbeatMaxAge;
-                if (logger.isDebugEnabled()) {
-                    logger.debug("isCoordinator: " + isCoordinator + ", heartbeatAge: " + heartbeatMaxAge
+                if (log.isDebugEnabled()) {
+                    log.debug("isCoordinator: " + isCoordinator + ", heartbeatAge: " + heartbeatMaxAge
                             + ", coordinatorHeartBeat: " + coordinatorHeartbeat + ", currentTime: "
                             + currentTimeMillis);
                 }
             } else {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("No coordinator present in database for group " + groupId);
+                if (log.isDebugEnabled()) {
+                    log.debug("No coordinator present in database for group " + groupId);
                 }
                 isCoordinator = false;
             }
             return isCoordinator;
         } catch (SQLException e) {
-            String errMsg = RDBMSConstants.TASK_GET_COORDINATOR_INFORMATION;
+            String errMsg = RDBMSConstants.TASK_CHECK_COORDINATOR_VALIDITY;
             throw new ClusterCoordinationException("Error occurred while " + errMsg, e);
         } finally {
-            close(resultSet, RDBMSConstants.TASK_GET_COORDINATOR_INFORMATION);
-            close(preparedStatement, RDBMSConstants.TASK_GET_COORDINATOR_INFORMATION);
-            close(connection, RDBMSConstants.TASK_GET_COORDINATOR_INFORMATION);
+            close(resultSet, RDBMSConstants.TASK_CHECK_COORDINATOR_VALIDITY);
+            close(preparedStatement, RDBMSConstants.TASK_CHECK_COORDINATOR_VALIDITY);
+            close(connection, RDBMSConstants.TASK_CHECK_COORDINATOR_VALIDITY);
         }
     }
 
@@ -483,6 +531,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             preparedStatement.setString(1, groupId);
             preparedStatement.setLong(2, thresholdTimeLimit);
             preparedStatement.executeUpdate();
+            if (log.isDebugEnabled()) {
+                log.debug(RDBMSConstants.TASK_REMOVE_COORDINATOR + " of group " + groupId + " executed successfully");
+            }
             connection.commit();
         } catch (SQLException e) {
             rollback(connection, RDBMSConstants.TASK_REMOVE_COORDINATOR);
@@ -506,6 +557,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             preparedStatementForNodeUpdate.setString(3, groupId);
             int updateCount = preparedStatementForNodeUpdate.executeUpdate();
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug(RDBMSConstants.TASK_UPDATE_NODE_HEARTBEAT + " of node " + nodeId + " executed successfully");
+            }
             return updateCount != 0;
         } catch (SQLException e) {
             rollback(connection, RDBMSConstants.TASK_UPDATE_NODE_HEARTBEAT);
@@ -535,6 +589,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             preparedStatement.setBinaryStream(4, new ByteArrayInputStream(propertiesMapAsBytes));
             preparedStatement.executeUpdate();
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug(RDBMSConstants.TASK_CREATE_NODE_HEARTBEAT + " of node " + nodeId + " executed successfully");
+            }
         } catch (SQLException e) {
             rollback(connection, RDBMSConstants.TASK_CREATE_NODE_HEARTBEAT);
             throw new ClusterCoordinationException("Error occurred while " + RDBMSConstants.TASK_CREATE_NODE_HEARTBEAT
@@ -587,14 +644,15 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         } catch (SQLException e) {
             String errMsg = RDBMSConstants.TASK_GET_ALL_QUEUES;
             throw new ClusterCoordinationException("Error occurred while " + errMsg, e);
-        } catch (IOException e) {
-            throw new ClusterCoordinationException("Error retrieving the property map. ", e);
-        } catch (ClassNotFoundException e) {
+        } catch (IOException | ClassNotFoundException e) {
             throw new ClusterCoordinationException("Error retrieving the property map. ", e);
         } finally {
             close(resultSet, RDBMSConstants.TASK_GET_ALL_QUEUES);
             close(preparedStatement, RDBMSConstants.TASK_GET_ALL_QUEUES);
             close(connection, RDBMSConstants.TASK_GET_ALL_QUEUES);
+        }
+        if (log.isDebugEnabled()) {
+            log.debug(RDBMSConstants.TASK_GET_ALL_QUEUES + " of group " + groupId + " executed successfully");
         }
         return nodeDataList;
     }
@@ -651,7 +709,53 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             close(clearMembershipEvents, RDBMSConstants.TASK_GET_ALL_QUEUES);
             close(connection, RDBMSConstants.TASK_GET_ALL_QUEUES);
         }
+        if (log.isDebugEnabled()) {
+            log.debug(RDBMSConstants.TASK_GET_ALL_QUEUES + " of removed nodes in group "
+                    + groupId + " executed successfully");
+        }
         return nodeDetail;
+    }
+
+    @Override
+    public void updatePropertiesMap(String nodeId, String groupId, Map<String, Object> propertiesMap) {
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        ByteArrayOutputStream byteArrayOutputStream = null;
+        try {
+            connection = getConnection();
+            byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(propertiesMap);
+            byte[] propertiesMapAsBytes = byteArrayOutputStream.toByteArray();
+            preparedStatement = connection.prepareStatement(RDBMSConstants.PS_UPDATE_PROPERTIES_MAP);
+            preparedStatement.setBinaryStream(1, new ByteArrayInputStream(propertiesMapAsBytes));
+            preparedStatement.setString(2, nodeId);
+            preparedStatement.setString(3, groupId);
+            preparedStatement.executeUpdate();
+            connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug(RDBMSConstants.TASK_UPDATE_PROPERTIES_MAP + " of node " + nodeId + " executed successfully");
+            }
+        } catch (SQLException e) {
+            rollback(connection, RDBMSConstants.TASK_UPDATE_PROPERTIES_MAP);
+            throw new ClusterCoordinationException("Error occurred while " + RDBMSConstants.TASK_UPDATE_PROPERTIES_MAP
+                    + ". Node ID: " + nodeId + " group ID " + groupId, e);
+        } catch (IOException e) {
+            throw new ClusterCoordinationException("Error in " + RDBMSConstants.PS_UPDATE_PROPERTIES_MAP + ". Node ID: "
+                    + nodeId + " group ID " + groupId, e);
+        } finally {
+            if (byteArrayOutputStream != null) {
+                try {
+                    byteArrayOutputStream.close();
+                } catch (IOException e) {
+                    log.error("Closing Byte Array Output Stream after "
+                            + RDBMSConstants.TASK_UPDATE_PROPERTIES_MAP, e);
+                }
+            }
+            close(preparedStatement, RDBMSConstants.TASK_UPDATE_PROPERTIES_MAP);
+            close(connection, RDBMSConstants.TASK_UPDATE_PROPERTIES_MAP);
+        }
+
     }
 
     @Override
@@ -699,6 +803,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             close(preparedStatement, RDBMSConstants.TASK_GET_ALL_QUEUES);
             close(connection, RDBMSConstants.TASK_GET_ALL_QUEUES);
         }
+        if (log.isDebugEnabled()) {
+            log.debug("getting node data of node " + nodeId + " executed successfully");
+        }
         return nodeDetail;
     }
 
@@ -723,6 +830,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             preparedStatement.setString(2, groupId);
             preparedStatement.executeUpdate();
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug(RDBMSConstants.TASK_REMOVE_NODE_HEARTBEAT + " of node " + nodeId + " executed successfully");
+            }
         } catch (SQLException e) {
             rollback(connection, RDBMSConstants.TASK_REMOVE_NODE_HEARTBEAT);
             throw new ClusterCoordinationException("error occurred while "
@@ -761,8 +871,10 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                 storeRemovedMembersPreparedStatement.addBatch();
             }
             storeRemovedMembersPreparedStatement.executeBatch();
-
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug(task + " executed successfully");
+            }
         } catch (SQLException e) {
             rollback(connection, task);
             throw new ClusterCoordinationException(
@@ -786,9 +898,12 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             preparedStatement.setString(2, groupId);
             int updateCount = preparedStatement.executeUpdate();
             if (updateCount == 0) {
-                logger.warn("No record was updated while marking node as not new");
+                log.warn("No record was updated while marking node as not new");
             }
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug(RDBMSConstants.TASK_MARK_NODE_NOT_NEW + " of node " + nodeId + " executed successfully");
+            }
         } catch (SQLException e) {
             rollback(connection, RDBMSConstants.TASK_MARK_NODE_NOT_NEW);
             throw new ClusterCoordinationException("Error occurred while " + RDBMSConstants.TASK_MARK_NODE_NOT_NEW, e);
@@ -811,8 +926,10 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
 
             clearCoordinatorHeartbeatData = connection.prepareStatement(RDBMSConstants.PS_CLEAR_COORDINATOR_HEARTBEAT);
             clearCoordinatorHeartbeatData.executeUpdate();
-
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug(task + " executed successfully");
+            }
         } catch (SQLException e) {
             rollback(connection, task);
             throw new ClusterCoordinationException("Error occurred while " + task, e);
@@ -832,9 +949,11 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             connection = getConnection();
             clearMembershipEvents = connection.prepareStatement(RDBMSConstants.PS_CLEAN_MEMBERSHIP_EVENTS_FOR_NODE);
             clearMembershipEvents.setString(1, nodeID);
-            // clearMembershipEvents.setString(2, groupID);
             clearMembershipEvents.executeUpdate();
             connection.commit();
+            if (log.isDebugEnabled()) {
+                log.debug(task + " executed successfully");
+            }
         } catch (SQLException e) {
             rollback(connection, task);
             throw new ClusterCoordinationException("Error occurred while " + task, e);

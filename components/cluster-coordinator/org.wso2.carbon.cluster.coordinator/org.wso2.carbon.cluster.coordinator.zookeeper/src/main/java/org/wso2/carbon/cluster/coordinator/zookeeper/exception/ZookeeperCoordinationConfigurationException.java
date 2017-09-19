@@ -13,15 +13,18 @@
  * limitations under the License.
  */
 
-package org.wso2.carbon.cluster.coordinator.rdbms.exception;
+package org.wso2.carbon.cluster.coordinator.zookeeper.exception;
 
-public class RDBMSClusterCoordinatorConfiurationException extends RuntimeException {
+/**
+ * Custom exception class for zookeeper coordination strategy.
+ */
+public class ZookeeperCoordinationConfigurationException extends RuntimeException {
 
-    public RDBMSClusterCoordinatorConfiurationException(String message, Throwable cause) {
+    public ZookeeperCoordinationConfigurationException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public RDBMSClusterCoordinatorConfiurationException(String message) {
+    public ZookeeperCoordinationConfigurationException(String message) {
         super(message);
     }
 }

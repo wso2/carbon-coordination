@@ -15,6 +15,8 @@
 
 package org.wso2.carbon.cluster.coordinator.rdbms.test;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -32,6 +34,8 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
     RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeThree;
     EventListener eventListener;
 
+    private static final Log log = LogFactory.getLog(CoordinationEventFlowTestCase.class);
+
     @BeforeClass
     public void initialize() throws InterruptedException, FileNotFoundException {
         System.setProperty("carbon.home", "src/test/resources");
@@ -46,21 +50,21 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
     public void testMemberJoined() throws InterruptedException {
         Map<String, Object> nodeOnePropertyMap = new HashMap<>();
         nodeOnePropertyMap.put("id", "node1");
-        rdbmsCoordinationStrategyNodeOne.joinGroup("testGroupOne", nodeOnePropertyMap);
+        rdbmsCoordinationStrategyNodeOne.joinGroup();
+        Thread.sleep(100);
+        rdbmsCoordinationStrategyNodeOne.setPropertiesMap(nodeOnePropertyMap);
         eventListener.setGroupId("testGroupOne");
         rdbmsCoordinationStrategyNodeOne.registerEventListener(eventListener);
 
     }
 
     @Test(dependsOnMethods = {"testMemberJoined"})
-    public void testCoordinatorElected()
-            throws InterruptedException {
+    public void testCoordinatorElected() throws InterruptedException {
         String leaderId = null;
         int count = 0;
         boolean coordinatorIdentified = false;
         while (count < 10) {
-            NodeDetail leaderNodeDetail = rdbmsCoordinationStrategyNodeOne
-                    .getLeaderNode("testGroupOne");
+            NodeDetail leaderNodeDetail = rdbmsCoordinationStrategyNodeOne.getLeaderNode();
             if (leaderNodeDetail != null) {
                 leaderId = (String) leaderNodeDetail.getPropertiesMap().get("id");
                 if (leaderId.equals("node1")) {
@@ -76,19 +80,22 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
     }
 
     @Test(dependsOnMethods = {"testCoordinatorElected"})
-    public void testMultipleMemberJoined()
-            throws InterruptedException {
+    public void testMultipleMemberJoined() throws InterruptedException {
         Map<String, Object> nodeTwoPropertyMap = new HashMap<>();
         nodeTwoPropertyMap.put("id", "node2");
-        rdbmsCoordinationStrategyNodeTwo.joinGroup("testGroupOne", nodeTwoPropertyMap);
+        rdbmsCoordinationStrategyNodeTwo.joinGroup();
+        Thread.sleep(100);
+        rdbmsCoordinationStrategyNodeTwo.setPropertiesMap(nodeTwoPropertyMap);
         Map<String, Object> nodeThreePropertyMap = new HashMap<>();
         nodeThreePropertyMap.put("id", "node3");
-        rdbmsCoordinationStrategyNodeThree.joinGroup("testGroupOne", nodeThreePropertyMap);
+        rdbmsCoordinationStrategyNodeThree.joinGroup();
+        Thread.sleep(500);
+        rdbmsCoordinationStrategyNodeThree.setPropertiesMap(nodeThreePropertyMap);
 
         int count = 0;
         boolean membersJoined = false;
         while (count < 10) {
-            if (rdbmsCoordinationStrategyNodeOne.getAllNodeDetails("testGroupOne").size() == 3) {
+            if (rdbmsCoordinationStrategyNodeOne.getAllNodeDetails().size() == 3) {
                 membersJoined = true;
                 break;
             }
@@ -98,31 +105,28 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
         Assert.assertTrue(membersJoined, "Multiple members were not joined to group");
     }
 
-    @Test(dependsOnMethods = {
-            "testMultipleMemberJoined"})
-    public void testMemberAddedEventRecieved()
-            throws InterruptedException {
+    @Test(dependsOnMethods = {"testMultipleMemberJoined"})
+    public void testMemberAddedEventReceived() throws InterruptedException {
         int count = 0;
-        boolean eventRecieved = false;
+        boolean eventReceived = false;
         while (count < 10) {
             if (eventListener.memberAdded.size() == 3) {
-                eventRecieved = true;
+                eventReceived = true;
                 break;
             }
             Thread.sleep(2000);
             count++;
         }
-        Assert.assertTrue(eventRecieved, "Member added event not received.");
+        Assert.assertTrue(eventReceived, "Member added event not received.");
     }
 
-    @Test(dependsOnMethods = {"testMemberAddedEventRecieved"})
-    public void testMemberRemoved()
-            throws InterruptedException {
+    @Test(dependsOnMethods = {"testMemberAddedEventReceived"})
+    public void testMemberRemoved() throws InterruptedException {
         rdbmsCoordinationStrategyNodeTwo.stop();
         int count = 0;
         boolean membersRemoved = false;
         while (count < 10) {
-            if (rdbmsCoordinationStrategyNodeOne.getAllNodeDetails("testGroupOne").size() == 2) {
+            if (rdbmsCoordinationStrategyNodeOne.getAllNodeDetails().size() == 2) {
                 membersRemoved = true;
                 break;
             }
@@ -133,31 +137,30 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
     }
 
     @Test(dependsOnMethods = {"testMemberRemoved"})
-    public void testMemberRemovedEventRecieved()
-            throws InterruptedException {
+    public void testMemberRemovedEventReceived() throws InterruptedException {
         int count = 0;
-        boolean eventRecieved = false;
+        boolean eventReceived = false;
         while (count < 10) {
             if (eventListener.memberRemoved.size() == 1) {
-                eventRecieved = true;
+                eventReceived = true;
                 break;
             }
             Thread.sleep(2000);
             count++;
         }
-        Assert.assertTrue(eventRecieved, "Member removed event not received.");
+        Assert.assertTrue(eventReceived, "Member removed event not received.");
     }
 
-    @Test(dependsOnMethods = {
-            "testMemberRemovedEventRecieved"})
-    public void testCoordinatorChanged()
-            throws InterruptedException {
+    @Test(dependsOnMethods = {"testMemberRemovedEventReceived"})
+    public void testCoordinatorChanged() throws InterruptedException {
         int count;
         String leaderId = null;
         RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeFour = new RDBMSCoordinationStrategy(dataSource);
         Map<String, Object> nodeFourPropertyMap = new HashMap<>();
         nodeFourPropertyMap.put("id", "node4");
-        rdbmsCoordinationStrategyNodeFour.joinGroup("testGroupOne", nodeFourPropertyMap);
+        rdbmsCoordinationStrategyNodeFour.joinGroup();
+        Thread.sleep(500);
+        rdbmsCoordinationStrategyNodeFour.setPropertiesMap(nodeFourPropertyMap);
         EventListener eventListener = new EventListener();
         eventListener.setGroupId("testGroupOne");
         rdbmsCoordinationStrategyNodeFour.registerEventListener(eventListener);
@@ -169,8 +172,7 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
         rdbmsCoordinationStrategyNodeOne.stop();
 
         while (count < 10) {
-            NodeDetail leaderNodeDetail = rdbmsCoordinationStrategyNodeThree
-                    .getLeaderNode("testGroupOne");
+            NodeDetail leaderNodeDetail = rdbmsCoordinationStrategyNodeThree.getLeaderNode();
             if (leaderNodeDetail != null) {
                 leaderId = (String) leaderNodeDetail.getPropertiesMap().get("id");
             } else {

@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-package org.wso2.carbon.cluster.coordinator.commons.internal;
+package org.wso2.carbon.cluster.coordinator.service.internal;
+
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,12 +26,15 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.wso2.carbon.cluster.coordinator.commons.api.ClusterCoordinator;
-import org.wso2.carbon.cluster.coordinator.commons.impl.ClusterCoordinatorImpl;
 import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
+import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
+import org.wso2.carbon.cluster.coordinator.service.ClusterCoordinator;
 
+/**
+ * Service component to consume a Coordination Strategy and Register A Cluster Coordinator as an OSGi Service
+ */
 @Component(
-        name = "org.wso2.carbon.cluster.coordinator.commons.internal.ClusterCoordinationServiceComponent",
+        name = "org.wso2.carbon.cluster.coordinator.service.internal.ClusterCoordinationServiceComponent",
         immediate = true,
         property = {
                 "componentName=rdbms-coordination-service"
@@ -43,17 +47,22 @@ public class ClusterCoordinationServiceComponent {
 
     @Activate
     public void start(BundleContext bundleContext) throws Exception {
-        ClusterCoordinatorImpl clusterCoordinator = null;
+        ClusterCoordinator clusterCoordinator = null;
         CoordinationStrategy coordinationStrategy = ClusterCoordinationServiceDataHolder.getCoordinationStrategy();
 
         if (coordinationStrategy != null) {
-            clusterCoordinator = new ClusterCoordinatorImpl(coordinationStrategy);
+            clusterCoordinator = new ClusterCoordinator(coordinationStrategy);
+            if (log.isDebugEnabled()) {
+                log.debug("Coordination Strategy: " + coordinationStrategy.getClass().getName() +
+                        " will be registered as a service");
+            }
         } else {
-            log.fatal("Coordination Strategy not found!");
+            throw new ClusterCoordinationException("No Coordination Strategy Service Can be Found");
         }
 
         serviceRegistration = bundleContext.registerService(ClusterCoordinator.class, clusterCoordinator, null);
-        log.info("Cluster Coordinator Service Component Activated!");
+        log.info("Cluster Coordinator Service Component Activated with Strategy " +
+                coordinationStrategy.getClass().getName());
     }
 
     @Deactivate
@@ -62,17 +71,17 @@ public class ClusterCoordinationServiceComponent {
     }
 
     @Reference(
-            name = "org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy",
+            name = "org.wso2.carbon.cluster.coordinator.service.CoordinationStrategy",
             service = CoordinationStrategy.class,
             cardinality = ReferenceCardinality.MANDATORY,
             policy = ReferencePolicy.DYNAMIC,
-            unbind = "unRegisterCoordinationStrategy"
+            unbind = "unregisterCoordinationStrategy"
     )
     protected void registerCoordinationStrategy(CoordinationStrategy coordinationStrategy) {
-        ClusterCoordinationServiceDataHolder.setStrategy(coordinationStrategy);
+        ClusterCoordinationServiceDataHolder.setCoordinationStrategy(coordinationStrategy);
     }
 
-    protected void unRegisterCoordinationStrategy(CoordinationStrategy coordinationStrategy) {
-        ClusterCoordinationServiceDataHolder.setStrategy(null);
+    protected void unregisterCoordinationStrategy(CoordinationStrategy coordinationStrategy) {
+        ClusterCoordinationServiceDataHolder.setCoordinationStrategy(null);
     }
 }

@@ -13,15 +13,12 @@
  * limitations under the License.
  */
 
-package org.wso2.carbon.cluster.coordinator.zookeeper.exception;
+package org.wso2.carbon.cluster.coordinator.zookeeper.util;
 
-public class ZookeeperClusterCoordinatorConfiurationException extends RuntimeException {
+/**
+ * Contains constant values needed for the coordination mechanism
+ */
+public class ZookeeperConstants {
 
-    public ZookeeperClusterCoordinatorConfiurationException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public ZookeeperClusterCoordinatorConfiurationException(String message) {
-        super(message);
-    }
+    public static final String ZOOKEEPER_CONNECTION = "connection.string";
 }

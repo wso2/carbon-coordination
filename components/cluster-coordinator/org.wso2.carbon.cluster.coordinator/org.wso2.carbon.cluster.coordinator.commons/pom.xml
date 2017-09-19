@@ -19,18 +19,6 @@
             <artifactId>commons-logging</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.orbit.org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.eclipse.osgi</groupId>
-            <artifactId>org.eclipse.osgi.services</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.wso2.carbon</groupId>
             <artifactId>org.wso2.carbon.core</artifactId>
         </dependency>
@@ -62,11 +50,6 @@
                         <Export-Package>
                             org.wso2.carbon.cluster.coordinator.commons.*;version="${carbon.coordination.exp.package.version}"
                         </Export-Package>
-                        <Import-Package>
-                            org.osgi.framework.*;version="[1.8.0, 2.0.0)",
-                            org.wso2.carbon.kernel;version="[5.0.0, 6.0.0)",
-                            *;resolution:=optional
-                        </Import-Package>
                     </instructions>
                 </configuration>
             </plugin>

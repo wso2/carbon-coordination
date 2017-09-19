@@ -68,11 +68,18 @@ public class RDBMSConstants {
                     + " VALUES (?,?,?,?,1)";
 
     /**
+     * Prepared statment to update properties map
+     */
+    public static final String PS_UPDATE_PROPERTIES_MAP =
+            "UPDATE " + CLUSTER_NODE_STATUS_TABLE + " SET " + PROPERTY_MAP + " =? WHERE " + NODE_ID + " =? AND "
+                    + GROUP_ID + " =?";
+
+    /**
      * Prepared statement to check if coordinator
      */
     public static final String PS_GET_COORDINATOR_ROW_FOR_NODE_ID =
             "SELECT " + LAST_HEARTBEAT + " FROM " + LEADER_STATUS_TABLE + " WHERE " + NODE_ID + "=?"
-                    + " AND " + GROUP_ID + "=?";
+                    + " AND " + GROUP_ID + " =?";
 
     /**
      * Prepared statement to check if still coordinator
@@ -165,12 +172,15 @@ public class RDBMSConstants {
 
     public static final String TASK_ADD_MESSAGE_ID = "adding message id";
     public static final String TASK_GET_ALL_QUEUES = "getting all queues";
+    public static final String TASK_CHECK_MEMBER_EXISTS = "checking if member already exists";
     public static final String TASK_ADD_COORDINATOR_ROW = "adding coordinator row";
     public static final String TASK_GET_COORDINATOR_INFORMATION = "reading coordinator information";
     public static final String TASK_CHECK_COORDINATOR_VALIDITY = "checking coordinator validity";
+    public static final String TASK_CHECK_IS_COORDINATOR = "checking is coordinator";
     public static final String TASK_UPDATE_COORDINATOR_HEARTBEAT = "updating coordinator heartbeat";
     public static final String TASK_UPDATE_NODE_HEARTBEAT = "updating node heartbeat";
     public static final String TASK_CREATE_NODE_HEARTBEAT = "creating node heartbeat";
+    public static final String TASK_UPDATE_PROPERTIES_MAP = "updating properties map";
     public static final String TASK_REMOVE_COORDINATOR = "removing coordinator heartbeat";
     public static final String TASK_REMOVE_NODE_HEARTBEAT = "removing node heartbeat entry";
 
@@ -201,6 +211,14 @@ public class RDBMSConstants {
                     + "                        NODE_ID VARCHAR(512) NOT NULL,\n"
                     + "                        PROPERTY_MAP BLOB NOT NULL,\n"
                     + "                        REMOVED_MEMBER_ID VARCHAR(512) NOT NULL\n" + ");\n";
+
+    public static final String RDBMS_COORDINATION_DS = "datasource";
+
+    public static final String HEART_BEAT_INTERVAL = "heart.beat.interval";
+
+    public static final String EVENT_POLLING_INTERVAL = "event.polling.interval";
+
+    public static final String HEART_BEAT_MAX_AGE = "heart.beat.max.age";
 
     /**
      * Only public static constants are in this class. No need to instantiate.

@@ -25,9 +25,10 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
-import org.wso2.carbon.cluster.coordinator.commons.internal.ClusterCoordinationServiceDataHolder;
+import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
+import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.zookeeper.ZookeeperCoordinationStrategy;
-import org.wso2.carbon.cluster.coordinator.zookeeper.exception.ZookeeperClusterCoordinatorConfiurationException;
+import org.wso2.carbon.cluster.coordinator.zookeeper.exception.ZookeeperCoordinationConfigurationException;
 import org.wso2.carbon.kernel.configprovider.CarbonConfigurationException;
 import org.wso2.carbon.kernel.configprovider.ConfigProvider;
 
@@ -64,28 +65,31 @@ public class ZookeeperCoordinationServiceComponent {
 
         Map<String, Object> clusterConfiguration = null;
         try {
-            clusterConfiguration = ClusterCoordinationServiceDataHolder.getConfigProvider().
-                    getConfigurationMap("ha.config");
-            ClusterCoordinationServiceDataHolder.setClusterConfiguration(clusterConfiguration);
+            clusterConfiguration = ZookeeperCoordinationServiceHolder.getConfigProvider().
+                    getConfigurationMap(CoordinationPropertyNames.CLUSTER_CONFIG_NS);
+            ZookeeperCoordinationServiceHolder.setClusterConfiguration(clusterConfiguration);
         } catch (CarbonConfigurationException e) {
-            throw new ZookeeperClusterCoordinatorConfiurationException("Configurations for Zookeeper based HA" +
-                    " deployment is not available in deployment.yaml");
+            throw new ClusterCoordinationException("Configurations for cluster coordination is not " +
+                    "available in deployment.yaml");
         }
-        if ((boolean) clusterConfiguration.get("enabled") &&
-                clusterConfiguration.get("coordination.strategy.class").equals("ZookeeperCoordinationStrategy")) {
+        if ((Boolean) clusterConfiguration.get(CoordinationPropertyNames.ENABLED_PROPERTY) &&
+                clusterConfiguration.get(CoordinationPropertyNames.COORDINATION_STRATEGY_CLASS_PROPERTY).
+                        equals(ZookeeperCoordinationStrategy.class.getCanonicalName())) {
             ZookeeperCoordinationStrategy zookeeperCoordinationStrategy = null;
 
             try {
                 zookeeperCoordinationStrategy = new ZookeeperCoordinationStrategy();
             } catch (IOException e) {
-                throw new ZookeeperClusterCoordinatorConfiurationException("Zookeeper Service can not be found", e);
+                throw new ZookeeperCoordinationConfigurationException("Zookeeper Service can not be found", e);
             }
 
             bundleContext.registerService(CoordinationStrategy.class, zookeeperCoordinationStrategy, null);
 
             log.info("Zookeeper Coordination Service Component Activated!");
         } else {
-            log.info("Zookeeper Coordination has not been enabled");
+            log.warn("Cluster Coordination using ZookeeperCoordinationStrategy has been disabled." +
+                    " Enable it in deployment.yaml or remove" +
+                    " org.wso2.carbon.cluster.coordinator.zookeeper.jar from the lib folder");
         }
     }
 
@@ -97,7 +101,7 @@ public class ZookeeperCoordinationServiceComponent {
      */
     @Deactivate
     protected void stop() throws Exception {
-        ClusterCoordinationServiceDataHolder.setClusterConfiguration(null);
+        ZookeeperCoordinationServiceHolder.setClusterConfiguration(null);
     }
 
     @Reference(
@@ -108,9 +112,7 @@ public class ZookeeperCoordinationServiceComponent {
             unbind = "unregisterConfigProvider"
     )
     protected void registerConfigProvider(ConfigProvider configProvider) throws CarbonConfigurationException {
-        ClusterCoordinationServiceDataHolder.setConfigProvider(configProvider);
-        String nodeId = (String) configProvider.getConfigurationMap("wso2.carbon").get("id");
-        ClusterCoordinationServiceDataHolder.setNodeId(nodeId);
+        ZookeeperCoordinationServiceHolder.setConfigProvider(configProvider);
     }
 
     protected void unregisterConfigProvider(ConfigProvider configProvider) {

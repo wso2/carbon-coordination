@@ -15,17 +15,28 @@
 
 package org.wso2.carbon.cluster.coordinator.zookeeper.test;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.zookeeper.ZookeeperCoordinationStrategy;
+import org.wso2.carbon.cluster.coordinator.zookeeper.internal.ZookeeperCoordinationServiceHolder;
+import org.wso2.carbon.kernel.configprovider.CarbonConfigurationException;
+import org.wso2.carbon.kernel.configprovider.ConfigProvider;
+import org.wso2.carbon.kernel.configprovider.YAMLBasedConfigFileReader;
+import org.wso2.carbon.kernel.internal.configprovider.ConfigProviderImpl;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class CoordinatorEventFlowTestCase {
+
+    private static final Log log = LogFactory.getLog(CoordinatorEventFlowTestCase.class);
+
 
     ZookeeperCoordinationStrategy zookeeperCoordinationStrategyNodeOne;
     ZookeeperCoordinationStrategy zookeeperCoordinationStrategyNodeTwo;
@@ -34,6 +45,14 @@ public class CoordinatorEventFlowTestCase {
 
     @BeforeClass public void initialize() throws InterruptedException, IOException {
         System.setProperty("carbon.home", "src/test/resources");
+        ConfigProvider configProvider = new ConfigProviderImpl(new YAMLBasedConfigFileReader("deployment.yaml"));
+        try {
+            Map<String, Object> clusterConfig = configProvider.
+                    getConfigurationMap(CoordinationPropertyNames.CLUSTER_CONFIG_NS);
+            ZookeeperCoordinationServiceHolder.setClusterConfiguration(clusterConfig);
+        } catch (CarbonConfigurationException e) {
+            log.error("Configuration file deployment.yaml not found in resources folder " + e);
+        }
         zookeeperCoordinationStrategyNodeOne = new ZookeeperCoordinationStrategy();
         zookeeperCoordinationStrategyNodeTwo = new ZookeeperCoordinationStrategy();
         zookeeperCoordinationStrategyNodeThree = new ZookeeperCoordinationStrategy();
@@ -43,7 +62,7 @@ public class CoordinatorEventFlowTestCase {
     @Test public void testMemberJoined() throws InterruptedException {
         Map<String, Object> nodeOnePropertyMap = new HashMap<>();
         nodeOnePropertyMap.put("id", "node1");
-        zookeeperCoordinationStrategyNodeOne.joinGroup("testGroupOne", nodeOnePropertyMap);
+        zookeeperCoordinationStrategyNodeOne.joinGroup(nodeOnePropertyMap);
         eventListener.setGroupId("testGroupOne");
         zookeeperCoordinationStrategyNodeOne.registerEventListener(eventListener);
         Thread.sleep(2000);
@@ -56,7 +75,7 @@ public class CoordinatorEventFlowTestCase {
         boolean coordinatorIdentified = false;
         while (count < 10) {
             NodeDetail leaderNodeDetail = zookeeperCoordinationStrategyNodeOne
-                    .getLeaderNode("testGroupOne");
+                    .getLeaderNode();
             if (leaderNodeDetail != null) {
                 leaderId = (String) leaderNodeDetail.getPropertiesMap().get("id");
                 if (leaderId.equals("node1")) {
@@ -75,15 +94,15 @@ public class CoordinatorEventFlowTestCase {
             throws InterruptedException {
         Map<String, Object> nodeTwoPropertyMap = new HashMap<>();
         nodeTwoPropertyMap.put("id", "node2");
-        zookeeperCoordinationStrategyNodeTwo.joinGroup("testGroupOne", nodeTwoPropertyMap);
+        zookeeperCoordinationStrategyNodeTwo.joinGroup(nodeTwoPropertyMap);
         Map<String, Object> nodeThreePropertyMap = new HashMap<>();
         nodeThreePropertyMap.put("id", "node3");
-        zookeeperCoordinationStrategyNodeThree.joinGroup("testGroupOne", nodeThreePropertyMap);
+        zookeeperCoordinationStrategyNodeThree.joinGroup(nodeThreePropertyMap);
 
         int count = 0;
         boolean membersJoined = false;
         while (count < 10) {
-            if (zookeeperCoordinationStrategyNodeOne.getAllNodeDetails("testGroupOne").size()
+            if (zookeeperCoordinationStrategyNodeOne.getAllNodeDetails().size()
                     == 3) {
                 membersJoined = true;
                 break;
@@ -116,7 +135,7 @@ public class CoordinatorEventFlowTestCase {
         int count = 0;
         boolean membersRemoved = false;
         while (count < 10) {
-            if (zookeeperCoordinationStrategyNodeOne.getAllNodeDetails("testGroupOne").size()
+            if (zookeeperCoordinationStrategyNodeOne.getAllNodeDetails().size()
                     == 2) {
                 membersRemoved = true;
                 break;
@@ -150,7 +169,7 @@ public class CoordinatorEventFlowTestCase {
         ZookeeperCoordinationStrategy zookeeperCoordinationStrategyNodeFour = new ZookeeperCoordinationStrategy();
         Map<String, Object> nodeFourPropertyMap = new HashMap<>();
         nodeFourPropertyMap.put("id", "node4");
-        zookeeperCoordinationStrategyNodeFour.joinGroup("testGroupOne", nodeFourPropertyMap);
+        zookeeperCoordinationStrategyNodeFour.joinGroup(nodeFourPropertyMap);
         EventListener eventListenerTwo = new EventListener();
         eventListenerTwo.setGroupId("testGroupOne");
         zookeeperCoordinationStrategyNodeFour.registerEventListener(eventListenerTwo);
@@ -162,7 +181,7 @@ public class CoordinatorEventFlowTestCase {
 
         while (count < 10) {
             NodeDetail leaderNodeDetail = zookeeperCoordinationStrategyNodeThree
-                    .getLeaderNode("testGroupOne");
+                    .getLeaderNode();
             if (leaderNodeDetail != null) {
                 leaderId = (String) leaderNodeDetail.getPropertiesMap().get("id");
             } else {

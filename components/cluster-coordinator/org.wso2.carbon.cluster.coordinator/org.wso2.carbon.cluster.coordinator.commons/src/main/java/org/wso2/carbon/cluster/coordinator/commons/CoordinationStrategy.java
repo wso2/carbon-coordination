@@ -15,6 +15,7 @@
 
 package org.wso2.carbon.cluster.coordinator.commons;
 
+
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 
@@ -30,18 +31,23 @@ public interface CoordinationStrategy {
     /**
      * Get the node details of the current cluster group.
      *
-     * @param groupId the group Id of the required node details
      * @return the node details of the current group
      */
-    List<NodeDetail> getAllNodeDetails(String groupId) throws ClusterCoordinationException;
+    List<NodeDetail> getAllNodeDetails() throws ClusterCoordinationException;
 
     /**
      * Get the leader ID of the current cluster group.
      *
-     * @param groupId the group Id of current cluster group
      * @return the  leader node ID of the current cluster group
      */
-    NodeDetail getLeaderNode(String groupId);
+    NodeDetail getLeaderNode();
+
+    /**
+     * Check if this node is the leader of the given group Id
+     *
+     * @return true if node is leader
+     */
+    boolean isLeaderNode();
 
     /**
      * Register an event listener as an instance of the MemberEventListener class. Therefore the node
@@ -52,10 +58,21 @@ public interface CoordinationStrategy {
     void registerEventListener(MemberEventListener memberEventListener);
 
     /**
-     * Join the node with a specific group.
+     * Join the configured group.
      *
-     * @param groupId the group Id of the needed cluster group
      */
-    void joinGroup(String groupId, Map<String, Object> propertiesMap);
+    void joinGroup();
+
+    /**
+     * Join the configured group with a properties Map
+     * @param propertiesMap a map of properties of the node
+     */
+    void joinGroup(Map<String, Object> propertiesMap);
+
+    /**
+     * Set the properties map of the local node
+     * @param propertiesMap the map of properties to be set
+     */
+    void setPropertiesMap(Map<String, Object> propertiesMap);
 }
 

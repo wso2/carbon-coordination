@@ -25,12 +25,13 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
-import org.wso2.carbon.cluster.coordinator.commons.internal.ClusterCoordinationServiceDataHolder;
+import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
+import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy;
-import org.wso2.carbon.cluster.coordinator.rdbms.exception.RDBMSClusterCoordinatorConfiurationException;
 import org.wso2.carbon.datasource.core.api.DataSourceService;
 import org.wso2.carbon.kernel.configprovider.CarbonConfigurationException;
 import org.wso2.carbon.kernel.configprovider.ConfigProvider;
+
 
 import java.util.Map;
 
@@ -54,23 +55,33 @@ public class RDBMSCoordinationServiceComponent {
     @Activate
     protected void start(BundleContext bundleContext) {
 
-        Map<String, Object> clusterConfiguration = null;
+        Map<String, Object> clusterConfiguration;
         try {
-            clusterConfiguration = ClusterCoordinationServiceDataHolder.getConfigProvider().
-                    getConfigurationMap("ha.config");
-            ClusterCoordinationServiceDataHolder.setClusterConfiguration(clusterConfiguration);
+            clusterConfiguration = RDBMSCoordinationServiceHolder.getConfigProvider().
+                    getConfigurationMap(CoordinationPropertyNames.CLUSTER_CONFIG_NS);
+            if (clusterConfiguration != null) {
+                RDBMSCoordinationServiceHolder.setClusterConfiguration(clusterConfiguration);
+            } else {
+                throw new ClusterCoordinationException("Configurations for cluster coordination is not " +
+                        "available in deployment.yaml");
+            }
         } catch (CarbonConfigurationException e) {
-            throw new RDBMSClusterCoordinatorConfiurationException("Configurations for RDBMS based HA deployment" +
-                    " is not available in deployment.yaml");
+            throw new ClusterCoordinationException("Error in reading the cluster coordination configurations " +
+                    "from deployment.yaml");
         }
-        if ((boolean) clusterConfiguration.get("enabled") &&
-                clusterConfiguration.get("coordination.strategy.class").equals("RDBMSCoordinationStrategy")) {
-            bundleContext.registerService(CoordinationStrategy.class, new RDBMSCoordinationStrategy(), null);
-            log.info("RDBMS Coordination Service Component Activated");
+        if ((Boolean) clusterConfiguration.get(CoordinationPropertyNames.ENABLED_PROPERTY)) {
+            if (clusterConfiguration.get(CoordinationPropertyNames.COORDINATION_STRATEGY_CLASS_PROPERTY).
+                    equals(RDBMSCoordinationStrategy.class.getCanonicalName())) {
+
+                bundleContext.registerService(CoordinationStrategy.class, new RDBMSCoordinationStrategy(), null);
+                log.info("RDBMS Coordination Service Component Activated");
+            } else {
+                log.warn("No such coordination strategy service found: " +
+                        clusterConfiguration.get(CoordinationPropertyNames.COORDINATION_STRATEGY_CLASS_PROPERTY));
+            }
         } else {
-            throw new RDBMSClusterCoordinatorConfiurationException("HA deployment using RDBMSCoordinationStrategy " +
-                    "has been disabled. Enable it in deployment.yaml or remove" +
-                    " org.wso2.carbon.cluster.coordinator.rdbms.jar from the lib folder");
+            log.warn("Cluster Coordination has been disabled. Enable it in deployment.yaml " +
+                    "to use the clustering service.");
         }
     }
 
@@ -80,7 +91,7 @@ public class RDBMSCoordinationServiceComponent {
      */
     @Deactivate
     protected void stop() {
-        ClusterCoordinationServiceDataHolder.setClusterConfiguration(null);
+        RDBMSCoordinationServiceHolder.setClusterConfiguration(null);
     }
 
     @Reference(
@@ -91,13 +102,11 @@ public class RDBMSCoordinationServiceComponent {
             unbind = "unregisterConfigProvider"
     )
     protected void registerConfigProvider(ConfigProvider configProvider) throws CarbonConfigurationException {
-        ClusterCoordinationServiceDataHolder.setConfigProvider(configProvider);
-        String nodeId = (String) configProvider.getConfigurationMap("wso2.carbon").get("id");
-        ClusterCoordinationServiceDataHolder.setNodeId(nodeId);
+        RDBMSCoordinationServiceHolder.setConfigProvider(configProvider);
     }
 
     protected void unregisterConfigProvider(ConfigProvider configProvider) {
-        ClusterCoordinationServiceDataHolder.setConfigProvider(null);
+        RDBMSCoordinationServiceHolder.setConfigProvider(null);
     }
 
     @Reference(
@@ -108,10 +117,10 @@ public class RDBMSCoordinationServiceComponent {
             unbind = "unregisterDataSourceListener"
     )
     protected void registerDataSourceListener(DataSourceService dataSourceService) {
-        RDBMSClusterCoordinatorServiceHolder.setDataSourceService(dataSourceService);
+        RDBMSCoordinationServiceHolder.setDataSourceService(dataSourceService);
     }
 
     protected void unregisterDataSourceListener(DataSourceService dataSourceService) {
-        RDBMSClusterCoordinatorServiceHolder.setDataSourceService(null);
+        RDBMSCoordinationServiceHolder.setDataSourceService(null);
     }
 }

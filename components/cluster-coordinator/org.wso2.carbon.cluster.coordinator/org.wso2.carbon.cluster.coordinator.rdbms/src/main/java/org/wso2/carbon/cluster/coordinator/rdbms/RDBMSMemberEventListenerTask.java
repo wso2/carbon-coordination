@@ -141,7 +141,7 @@ class RDBMSMemberEventListenerTask implements Runnable {
 
     /**
      * Method to read membership events.
-     * <p>This will read all membership events that a are recorded for a particular node and clear all of those once
+     * <p>This will read all membership events that are recorded for a particular node and clear all of those once
      * read.
      *
      * @return list membership events

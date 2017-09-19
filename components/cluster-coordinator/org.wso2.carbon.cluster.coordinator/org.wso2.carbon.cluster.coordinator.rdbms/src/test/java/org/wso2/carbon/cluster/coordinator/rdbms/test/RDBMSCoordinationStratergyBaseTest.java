@@ -18,12 +18,19 @@ package org.wso2.carbon.cluster.coordinator.rdbms.test;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.h2.jdbcx.JdbcDataSource;
+import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
+import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
+import org.wso2.carbon.kernel.configprovider.CarbonConfigurationException;
+import org.wso2.carbon.kernel.configprovider.ConfigProvider;
+import org.wso2.carbon.kernel.configprovider.YAMLBasedConfigFileReader;
+import org.wso2.carbon.kernel.internal.configprovider.ConfigProviderImpl;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Map;
+import javax.sql.DataSource;
 
 public class RDBMSCoordinationStratergyBaseTest {
 
@@ -65,6 +72,14 @@ public class RDBMSCoordinationStratergyBaseTest {
     protected DataSource dataSource;
 
     protected void init() {
+        ConfigProvider configProvider = new ConfigProviderImpl(new YAMLBasedConfigFileReader("deployment.yaml"));
+        try {
+            Map<String, Object> clusterConfig = configProvider.
+                    getConfigurationMap(CoordinationPropertyNames.CLUSTER_CONFIG_NS);
+            RDBMSCoordinationServiceHolder.setClusterConfiguration(clusterConfig);
+        } catch (CarbonConfigurationException e) {
+            log.error("Configuration file deployment.yaml not found in resources folder " + e);
+        }
         try {
             Class.forName("org.h2.Driver");
             JdbcDataSource h2DataSource = new JdbcDataSource();

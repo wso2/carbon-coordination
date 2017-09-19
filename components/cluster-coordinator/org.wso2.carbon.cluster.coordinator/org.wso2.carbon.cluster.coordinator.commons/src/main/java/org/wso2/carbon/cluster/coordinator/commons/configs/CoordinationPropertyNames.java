@@ -16,43 +16,20 @@
 package org.wso2.carbon.cluster.coordinator.commons.configs;
 
 /**
- * This class contains the configuration constants needed for the RDBMS coordination algorithm.
+ * This class contains the configuration constants needed for the coordination algorithm.
  */
 public class CoordinationPropertyNames {
 
-    /**
-     * Name of the coordination strategy class.
-     */
-    public static final String RDBMS_COORDINATION_STRATERGY = "org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy";
+    public static final String CLUSTER_CONFIG_NS = "cluster.config";
 
-    /**
-     * Name of the coordination strategy class.
-     */
-    public static final String ZOOKEEPER_COORDINATION_STRATERGY = "org.wso2.carbon.cluster.coordinator.zookeeper.ZookeeperCoordinationStrategy";
+    public static final String STRATEGY_CONFIG_NS = "strategy.config";
 
-    /**
-     * Coordination heartbeat interval property name which the nodes will be updating the database heartbeats.
-     */
-    public static final String RDBMS_BASED_COORDINATION_HEARTBEAT_INTERVAL = "heartbeatInterval";
+    public static final String COORDINATION_STRATEGY_CLASS_PROPERTY = "coordination.strategy.class";
 
-    /**
-     * A node will poll the databases with this time interval property name.
-     */
-    public static final String RDBMS_BASED_EVENT_POLLING_INTERVAL = "eventPollingInterval";
+    public static final String GROUP_ID_PROPERTY = "group.id";
 
-    /**
-     * A node will poll the databases with this time interval property name.
-     */
-    public static final String RDBMS_BASED_PERFORM_TASK_THREAD_COUNT = "taskThreadCount";
+    public static final String ENABLED_PROPERTY = "enabled";
 
-    /**
-     * Zookeeper connection string property name
-     */
-    public static final String ZOOKEEPER_CONNECTION_STRING = "connectionString";
-
-    /**
-     * This class does not need to be instantiated as all the variables are static and public.
-     */
     private CoordinationPropertyNames() {
     }
 }
