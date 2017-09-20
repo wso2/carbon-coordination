@@ -28,10 +28,11 @@ import org.apache.zookeeper.Watcher;
 import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
 import org.wso2.carbon.cluster.coordinator.commons.MemberEventListener;
 import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationStrategyConfiguration;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
+import org.wso2.carbon.cluster.coordinator.zookeeper.internal.ZookeeperCoordinationServiceHolder;
 import org.wso2.carbon.cluster.coordinator.zookeeper.util.ZooKeeperService;
+import org.wso2.carbon.cluster.coordinator.zookeeper.util.ZookeeperConstants;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -54,18 +55,27 @@ public class ZookeeperCoordinationStrategy implements CoordinationStrategy {
     private final ZooKeeperService zooKeeperService;
     private List<MemberEventListener> listeners;
     private String zkURL;
+    private String localGroupId;
 
     public ZookeeperCoordinationStrategy() throws IOException {
-        this.zkURL = CoordinationStrategyConfiguration.getInstance().getZooKeeperConfigs()
-                .get(CoordinationPropertyNames.ZOOKEEPER_CONNECTION_STRING);
+        Map<String, Object> clusterConfiguration = ZookeeperCoordinationServiceHolder.getClusterConfiguration();
+        if (clusterConfiguration != null) {
+            this.zkURL = (String) clusterConfiguration.
+                    getOrDefault(ZookeeperConstants.ZOOKEEPER_CONNECTION, "localhost:2181");
+        } else {
+            throw new ClusterCoordinationException("Cluster Configurations not found in" +
+                    " deployment.yaml, please check " + CoordinationPropertyNames.CLUSTER_CONFIG_NS +
+                    " namespace configurations");
+        }
+        this.localGroupId = (String) clusterConfiguration.get(CoordinationPropertyNames.GROUP_ID_PROPERTY);
         zooKeeperService = new ZooKeeperService(this.zkURL, new ProcessNodeWatcher());
         listeners = new ArrayList<>();
     }
 
-    @Override public List<NodeDetail> getAllNodeDetails(String groupId)
-            throws ClusterCoordinationException {
+    @Override
+    public List<NodeDetail> getAllNodeDetails() throws ClusterCoordinationException {
         final List<String> childNodePaths = zooKeeperService
-                .getChildren(LEADER_ELECTION_ROOT_NODE + "/" + groupId, false);
+                .getChildren(LEADER_ELECTION_ROOT_NODE + "/" + localGroupId, false);
         List<NodeDetail> nodeDetails = new ArrayList<>();
 
         for (String childPath : childNodePaths) {
@@ -73,61 +83,63 @@ public class ZookeeperCoordinationStrategy implements CoordinationStrategy {
             Map<String, Object> propertyMap = null;
             try {
                 nodeDetailByteArray = zooKeeperService
-                        .getData(LEADER_ELECTION_ROOT_NODE + "/" + groupId + "/" + childPath);
+                        .getData(LEADER_ELECTION_ROOT_NODE + "/" + localGroupId + "/" + childPath);
                 ByteArrayInputStream byteStream = new ByteArrayInputStream(nodeDetailByteArray);
                 ObjectInputStream objStream = new ObjectInputStream(byteStream);
                 Object object = objStream.readObject();
                 propertyMap = (Map<String, Object>) object;
-            } catch (KeeperException e) {
-                throw new ClusterCoordinationException("Error while getting node details", e);
-            } catch (InterruptedException e) {
-                throw new ClusterCoordinationException("Error while getting node details", e);
-            } catch (IOException e) {
-                throw new ClusterCoordinationException("Error while getting node details", e);
-            } catch (ClassNotFoundException e) {
+            } catch (KeeperException | InterruptedException | IOException | ClassNotFoundException e) {
                 throw new ClusterCoordinationException("Error while getting node details", e);
             }
-            nodeDetails.add(new NodeDetail(childPath, groupId, true, 0, false, propertyMap));
+            nodeDetails.add(new NodeDetail(childPath, localGroupId, true, 0, false, propertyMap));
         }
         return nodeDetails;
     }
 
-    @Override public NodeDetail getLeaderNode(String groupId) {
+    @Override
+    public NodeDetail getLeaderNode() {
         final List<String> childNodePaths = zooKeeperService
-                .getChildren(LEADER_ELECTION_ROOT_NODE + "/" + groupId, false);
+                .getChildren(LEADER_ELECTION_ROOT_NODE + "/" + localGroupId, false);
         Collections.sort(childNodePaths);
         byte[] nodeDetailByteArray = null;
         Map<String, Object> propertyMap = null;
         try {
             nodeDetailByteArray = zooKeeperService.getData(
-                    LEADER_ELECTION_ROOT_NODE + "/" + groupId + "/" + childNodePaths.get(0));
+                    LEADER_ELECTION_ROOT_NODE + "/" + localGroupId + "/" + childNodePaths.get(0));
             ByteArrayInputStream byteStream = new ByteArrayInputStream(nodeDetailByteArray);
             ObjectInputStream objStream = new ObjectInputStream(byteStream);
             Object object = objStream.readObject();
             propertyMap = (Map<String, Object>) object;
-        } catch (KeeperException e) {
-            throw new ClusterCoordinationException("Error while getting leader node", e);
-        } catch (InterruptedException e) {
-            throw new ClusterCoordinationException("Error while getting leader node", e);
-        } catch (IOException e) {
-            throw new ClusterCoordinationException("Error while getting leader node", e);
-        } catch (ClassNotFoundException e) {
+        } catch (KeeperException | InterruptedException | IOException | ClassNotFoundException e) {
             throw new ClusterCoordinationException("Error while getting leader node", e);
         }
-        return new NodeDetail(childNodePaths.get(0), groupId, true, 0, false, propertyMap);
+        return new NodeDetail(childNodePaths.get(0), localGroupId, true, 0, false, propertyMap);
     }
 
-    @Override public void registerEventListener(MemberEventListener memberEventListener) {
+    @Override
+    public boolean isLeaderNode() {
+        // TODO: 9/15/17
+        return false;
+    }
+
+    @Override
+    public void registerEventListener(MemberEventListener memberEventListener) {
+        memberEventListener.setGroupId(localGroupId);
         listeners.add(memberEventListener);
     }
 
-    @Override public void joinGroup(String groupId, Map<String, Object> propertiesMap) {
+    @Override
+    public void joinGroup() {
+        joinGroup(null);
+    }
+
+    @Override
+    public void joinGroup(Map<String, Object> propertiesMap) {
         final String rootNodePath = zooKeeperService
                 .createNode(LEADER_ELECTION_ROOT_NODE, new byte[0], false, false);
         if (rootNodePath == null) {
             throw new IllegalStateException(
-                    "Unable to create/access leader election root node with path: "
-                            + LEADER_ELECTION_ROOT_NODE);
+                    "Unable to create/access leader election root node with path: " + LEADER_ELECTION_ROOT_NODE);
         }
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         ObjectOutputStream out = null;
@@ -140,8 +152,7 @@ public class ZookeeperCoordinationStrategy implements CoordinationStrategy {
         }
         byte[] dataByteArray = byteOut.toByteArray();
         String processNodePath = zooKeeperService
-                .createNode(rootNodePath + "/" + groupId + PROCESS_NODE_PREFIX, dataByteArray,
-                        false, true);
+                .createNode(rootNodePath + "/" + localGroupId + PROCESS_NODE_PREFIX, dataByteArray, false, true);
         if (processNodePath == null) {
             throw new IllegalStateException(
                     "Unable to create/access process node with path: " + LEADER_ELECTION_ROOT_NODE);
@@ -151,15 +162,19 @@ public class ZookeeperCoordinationStrategy implements CoordinationStrategy {
         client = CuratorFrameworkFactory
                 .newClient(this.zkURL, new ExponentialBackoffRetry(1000, 3));
         client.start();
-        cache = new PathChildrenCache(client, LEADER_ELECTION_ROOT_NODE + "/" + groupId, true);
+        cache = new PathChildrenCache(client, LEADER_ELECTION_ROOT_NODE + "/" + localGroupId, true);
         try {
             cache.start();
         } catch (Exception e) {
             throw new ClusterCoordinationException("Error while starting the path cache", e);
         }
-        String watchedNode = attemptForLeaderPosition(groupId, processNodePath);
-        addListener(cache, groupId, processNodePath, watchedNode,
-                getLeaderNode(groupId).getNodeId());
+        String watchedNode = attemptForLeaderPosition(localGroupId, processNodePath);
+        addListener(cache, localGroupId, processNodePath, watchedNode, getLeaderNode().getNodeId());
+    }
+
+    @Override
+    public void setPropertiesMap(Map<String, Object> propertiesMap) {
+        // TODO: 9/18/17
     }
 
     /**
@@ -180,7 +195,7 @@ public class ZookeeperCoordinationStrategy implements CoordinationStrategy {
      * @param leaderNode      Leader node of the current group
      */
     private void addListener(PathChildrenCache cache, final String groupId,
-            final String processNodePath, final String watchedNode, final String leaderNode) {
+                             final String processNodePath, final String watchedNode, final String leaderNode) {
         final PathChildrenCacheListener listener = new PathChildrenCacheListener() {
             String groupID = groupId;
             String currentLeader = leaderNode;
@@ -188,62 +203,62 @@ public class ZookeeperCoordinationStrategy implements CoordinationStrategy {
             String processNode = processNodePath;
 
             public synchronized void childEvent(CuratorFramework client,
-                    PathChildrenCacheEvent event) throws Exception {
+                                                PathChildrenCacheEvent event) throws Exception {
                 switch (event.getType()) {
-                case CHILD_ADDED: {
-                    currentLeader = getLeaderNode(groupID).getNodeId();
-                    for (MemberEventListener listener : listeners) {
-                        boolean isCoordinator = false;
-                        if (currentLeader.equals(event.getData().getPath()
-                                .substring(event.getData().getPath().lastIndexOf('/') + 1))) {
-                            isCoordinator = true;
-                        }
-                        if (event.getData().getPath().toLowerCase(Locale.ENGLISH)
-                                .contains(listener.getGroupId().toLowerCase(Locale.ENGLISH))) {
-                            listener.memberAdded(new NodeDetail(
-                                    ZKPaths.getNodeFromPath(event.getData().getPath()),
-                                    listener.getGroupId(), isCoordinator, 0, false, null));
-                        }
-                    }
-                    break;
-                }
-                case CHILD_REMOVED: {
-                    for (MemberEventListener listener : listeners) {
-                        boolean isCoordinator = false;
-
-                        if (currentLeader.equals(event.getData().getPath()
-                                .substring(event.getData().getPath().lastIndexOf('/') + 1))) {
-                            isCoordinator = true;
-                        }
-                        if (groupID.equals(listener.getGroupId())) {
-                            listener.memberRemoved(new NodeDetail(
-                                    ZKPaths.getNodeFromPath(event.getData().getPath()),
-                                    listener.getGroupId(), isCoordinator, 0, false, null));
-                        }
-                    }
-                    final List<String> childNodePaths = zooKeeperService
-                            .getChildren(LEADER_ELECTION_ROOT_NODE + "/" + groupID, false);
-                    Collections.sort(childNodePaths);
-                    if (event.getData().getPath().equalsIgnoreCase(watchNode)) {
-                        watchNode = attemptForLeaderPosition(groupID, processNode);
-                    }
-                    if (!currentLeader.equals(childNodePaths.get(0))) {
+                    case CHILD_ADDED: {
+                        currentLeader = getLeaderNode().getNodeId();
                         for (MemberEventListener listener : listeners) {
-
+                            boolean isCoordinator = false;
+                            if (currentLeader.equals(event.getData().getPath()
+                                    .substring(event.getData().getPath().lastIndexOf('/') + 1))) {
+                                isCoordinator = true;
+                            }
                             if (event.getData().getPath().toLowerCase(Locale.ENGLISH)
                                     .contains(listener.getGroupId().toLowerCase(Locale.ENGLISH))) {
-                                listener.coordinatorChanged(
-                                        new NodeDetail(childNodePaths.get(0), listener.getGroupId(),
-                                                true, 0, false, null));
+                                listener.memberAdded(new NodeDetail(
+                                        ZKPaths.getNodeFromPath(event.getData().getPath()),
+                                        listener.getGroupId(), isCoordinator, 0, false, null));
                             }
                         }
-                        currentLeader = childNodePaths.get(0);
+                        break;
                     }
+                    case CHILD_REMOVED: {
+                        for (MemberEventListener listener : listeners) {
+                            boolean isCoordinator = false;
 
-                    break;
-                }
-                default:
-                    break;
+                            if (currentLeader.equals(event.getData().getPath()
+                                    .substring(event.getData().getPath().lastIndexOf('/') + 1))) {
+                                isCoordinator = true;
+                            }
+                            if (groupID.equals(listener.getGroupId())) {
+                                listener.memberRemoved(new NodeDetail(
+                                        ZKPaths.getNodeFromPath(event.getData().getPath()),
+                                        listener.getGroupId(), isCoordinator, 0, false, null));
+                            }
+                        }
+                        final List<String> childNodePaths = zooKeeperService
+                                .getChildren(LEADER_ELECTION_ROOT_NODE + "/" + groupID, false);
+                        Collections.sort(childNodePaths);
+                        if (event.getData().getPath().equalsIgnoreCase(watchNode)) {
+                            watchNode = attemptForLeaderPosition(groupID, processNode);
+                        }
+                        if (!currentLeader.equals(childNodePaths.get(0))) {
+                            for (MemberEventListener listener : listeners) {
+
+                                if (event.getData().getPath().toLowerCase(Locale.ENGLISH)
+                                        .contains(listener.getGroupId().toLowerCase(Locale.ENGLISH))) {
+                                    listener.coordinatorChanged(
+                                            new NodeDetail(childNodePaths.get(0), listener.getGroupId(),
+                                                    true, 0, false, null));
+                                }
+                            }
+                            currentLeader = childNodePaths.get(0);
+                        }
+
+                        break;
+                    }
+                    default:
+                        break;
                 }
             }
         };
@@ -264,12 +279,10 @@ public class ZookeeperCoordinationStrategy implements CoordinationStrategy {
         String watchedNodePath = "";
         Collections.sort(childNodePaths);
 
-        int index = childNodePaths
-                .indexOf(processNodePath.substring(processNodePath.lastIndexOf('/') + 1));
+        int index = childNodePaths.indexOf(processNodePath.substring(processNodePath.lastIndexOf('/') + 1));
         if (index != 0) {
             final String watchedNodeShortPath = childNodePaths.get(index - 1);
-            watchedNodePath =
-                    LEADER_ELECTION_ROOT_NODE + "/" + groupID + "/" + watchedNodeShortPath;
+            watchedNodePath = LEADER_ELECTION_ROOT_NODE + "/" + groupID + "/" + watchedNodeShortPath;
         }
         return watchedNodePath;
     }
@@ -278,7 +291,8 @@ public class ZookeeperCoordinationStrategy implements CoordinationStrategy {
      * Watcher classes needed to create nodes.
      */
     public static class ProcessNodeWatcher implements Watcher {
-        @Override public void process(WatchedEvent event) {
+        @Override
+        public void process(WatchedEvent event) {
 
         }
     }

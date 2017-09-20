@@ -13,35 +13,45 @@
  * limitations under the License.
  */
 
-package org.wso2.carbon.cluster.coordinator.rdbms.internal.ds;
+package org.wso2.carbon.cluster.coordinator.rdbms.internal;
 
 import org.wso2.carbon.datasource.core.api.DataSourceService;
+import org.wso2.carbon.kernel.configprovider.ConfigProvider;
+
+import java.util.Map;
 
 /**
  * The service holder class for the cluster coordinator service.
  */
-public class RDBMSClusterCoordinatorServiceHolder {
+public class RDBMSCoordinationServiceHolder {
 
-    /**
-     * Datasource for accessing the database.
-     */
     private static DataSourceService dataSourceService;
 
-    /**
-     * Get the datasource service.
-     *
-     * @return datasource service
-     */
+    private static ConfigProvider configProvider;
+
+    private static Map<String, Object> clusterConfiguration;
+
     public static DataSourceService getDataSourceService() {
         return dataSourceService;
     }
 
-    /**
-     * Set the datasource service.
-     *
-     * @param dataSourceService The datasource service to be set
-     */
     public static void setDataSourceService(DataSourceService dataSourceService) {
-        RDBMSClusterCoordinatorServiceHolder.dataSourceService = dataSourceService;
+        RDBMSCoordinationServiceHolder.dataSourceService = dataSourceService;
+    }
+
+    public static ConfigProvider getConfigProvider() {
+        return configProvider;
+    }
+
+    public static void setConfigProvider(ConfigProvider configProvider) {
+        RDBMSCoordinationServiceHolder.configProvider = configProvider;
+    }
+
+    public static Map<String, Object> getClusterConfiguration() {
+        return clusterConfiguration;
+    }
+
+    public static void setClusterConfiguration(Map<String, Object> clusterConfiguration) {
+        RDBMSCoordinationServiceHolder.clusterConfiguration = clusterConfiguration;
     }
 }

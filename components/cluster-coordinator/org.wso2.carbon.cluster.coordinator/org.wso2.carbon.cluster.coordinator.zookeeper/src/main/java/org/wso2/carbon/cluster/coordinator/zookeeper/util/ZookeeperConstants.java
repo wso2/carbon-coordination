@@ -13,23 +13,12 @@
  * limitations under the License.
  */
 
-package org.wso2.carbon.cluster.coordinator.commons.configs;
+package org.wso2.carbon.cluster.coordinator.zookeeper.util;
 
 /**
- * This class contains the configuration constants needed for the coordination algorithm.
+ * Contains constant values needed for the coordination mechanism
  */
-public class CoordinationPropertyNames {
+public class ZookeeperConstants {
 
-    public static final String CLUSTER_CONFIG_NS = "cluster.config";
-
-    public static final String STRATEGY_CONFIG_NS = "strategy.config";
-
-    public static final String COORDINATION_STRATEGY_CLASS_PROPERTY = "coordination.strategy.class";
-
-    public static final String GROUP_ID_PROPERTY = "group.id";
-
-    public static final String ENABLED_PROPERTY = "enabled";
-
-    private CoordinationPropertyNames() {
-    }
+    public static final String ZOOKEEPER_CONNECTION = "connection.string";
 }

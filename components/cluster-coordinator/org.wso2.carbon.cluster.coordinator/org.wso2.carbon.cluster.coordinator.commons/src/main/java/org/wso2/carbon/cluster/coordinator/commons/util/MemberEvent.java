@@ -24,6 +24,9 @@ public class MemberEvent {
      */
     private String nodeId;
 
+    /**
+     * The group Id for which the membership event was triggered.
+     */
     private String groupId;
 
     /**
@@ -36,6 +39,7 @@ public class MemberEvent {
      *
      * @param type   Membership event type
      * @param nodeId The members node ID
+     * @param groupId The members group ID
      */
     public MemberEvent(MemberEventType type, String nodeId, String groupId) {
         this.type = type;

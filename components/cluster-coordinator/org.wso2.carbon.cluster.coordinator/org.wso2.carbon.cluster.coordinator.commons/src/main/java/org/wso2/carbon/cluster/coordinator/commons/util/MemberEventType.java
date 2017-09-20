@@ -15,10 +15,11 @@
 
 package org.wso2.carbon.cluster.coordinator.commons.util;
 
+
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 
 /**
- *
+ * Enumeration for the three event types being broadcast to listeners
  */
 public enum MemberEventType {
     MEMBER_ADDED(1), MEMBER_REMOVED(2), COORDINATOR_CHANGED(3);
@@ -35,12 +36,10 @@ public enum MemberEventType {
     /**
      * Retrieve the relevant type of the membership event by passing the integer code.
      *
-     * @param typeInInt the integre code
+     * @param typeInInt the integer code
      * @return the membership type
-     * @throws ClusterCoordinationException
      */
-    public static MemberEventType getTypeFromInt(int typeInInt)
-            throws ClusterCoordinationException {
+    public static MemberEventType getTypeFromInt(int typeInInt) throws ClusterCoordinationException {
         switch (typeInInt) {
         case 1:
             return MEMBER_ADDED;

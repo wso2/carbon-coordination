@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://wso2.com) All Rights Reserved.
+ * Copyright (c) 2017, WSO2 Inc. (http://wso2.com) All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,12 +18,19 @@ package org.wso2.carbon.cluster.coordinator.rdbms.test;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.h2.jdbcx.JdbcDataSource;
+import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
+import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
+import org.wso2.carbon.kernel.configprovider.CarbonConfigurationException;
+import org.wso2.carbon.kernel.configprovider.ConfigProvider;
+import org.wso2.carbon.kernel.configprovider.YAMLBasedConfigFileReader;
+import org.wso2.carbon.kernel.internal.configprovider.ConfigProviderImpl;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Map;
+import javax.sql.DataSource;
 
 public class RDBMSCoordinationStratergyBaseTest {
 
@@ -51,13 +58,13 @@ public class RDBMSCoordinationStratergyBaseTest {
                     + "                        GROUP_ID VARCHAR(512) NOT NULL,\n"
                     + "                        NODE_ID VARCHAR(512) NOT NULL,\n"
                     + "                        CHANGE_TYPE INT NOT NULL,\n"
-                    + "                        CHANGED_MEMBER_ID VARCHAR(512) NOT NULL,\n" + ");\n";
+                    + "                        CHANGED_MEMBER_ID VARCHAR(512) NOT NULL\n" + ");\n";
     private static final String CREATE_REMOVED_MEMBERS_TABLE =
             "CREATE TABLE IF NOT EXISTS REMOVED_MEMBERS_TABLE (\n"
                     + "                        GROUP_ID VARCHAR(512) NOT NULL,\n"
                     + "                        NODE_ID VARCHAR(512) NOT NULL,\n"
                     + "                        PROPERTY_MAP BLOB NOT NULL,\n"
-                    + "                        REMOVED_MEMBER_ID VARCHAR(512) NOT NULL,\n" + ");\n";
+                    + "                        REMOVED_MEMBER_ID VARCHAR(512) NOT NULL\n" + ");\n";
     private static final String CLEAR_LEADER_STATUS_TABLE = "DELETE FROM LEADER_STATUS_TABLE;";
     private static final String CLEAR_CLUSTER_NODE_STATUS_TABLE = "DELETE FROM CLUSTER_NODE_STATUS_TABLE;";
     private static final String CLEAR_MEMBERSHIP_EVENT_TABLE = "DELETE FROM MEMBERSHIP_EVENT_TABLE;";
@@ -65,6 +72,14 @@ public class RDBMSCoordinationStratergyBaseTest {
     protected DataSource dataSource;
 
     protected void init() {
+        ConfigProvider configProvider = new ConfigProviderImpl(new YAMLBasedConfigFileReader("deployment.yaml"));
+        try {
+            Map<String, Object> clusterConfig = configProvider.
+                    getConfigurationMap(CoordinationPropertyNames.CLUSTER_CONFIG_NS);
+            RDBMSCoordinationServiceHolder.setClusterConfiguration(clusterConfig);
+        } catch (CarbonConfigurationException e) {
+            log.error("Configuration file deployment.yaml not found in resources folder " + e);
+        }
         try {
             Class.forName("org.h2.Driver");
             JdbcDataSource h2DataSource = new JdbcDataSource();
@@ -107,6 +122,7 @@ public class RDBMSCoordinationStratergyBaseTest {
         PreparedStatement preparedStatement = null;
         try {
             connection = this.dataSource.getConnection();
+            connection.setAutoCommit(false);
             preparedStatement = connection.prepareStatement(query);
             preparedStatement.execute();
             connection.commit();

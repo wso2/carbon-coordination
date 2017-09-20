@@ -21,24 +21,24 @@ package org.wso2.carbon.cluster.coordinator.rdbms.util;
 public class RDBMSConstants {
 
     // Coordination related tables
-    public static final String LEADER_STATUS_TABLE = "LEADER_STATUS_TABLE";
-    public static final String CLUSTER_NODE_STATUS_TABLE = "CLUSTER_NODE_STATUS_TABLE";
+    private static final String LEADER_STATUS_TABLE = "LEADER_STATUS_TABLE";
+    private static final String CLUSTER_NODE_STATUS_TABLE = "CLUSTER_NODE_STATUS_TABLE";
     //Cluster membership table
-    public static final String MEMBERSHIP_EVENT_TABLE = "MEMBERSHIP_EVENT_TABLE";
-    public static final String REMOVED_MEMBERS_TABLE = "REMOVED_MEMBERS_TABLE";
+    private static final String MEMBERSHIP_EVENT_TABLE = "MEMBERSHIP_EVENT_TABLE";
+    private static final String REMOVED_MEMBERS_TABLE = "REMOVED_MEMBERS_TABLE";
 
     // Cluster node status table columns
-    public static final String NODE_ID = "NODE_ID";
+    private static final String NODE_ID = "NODE_ID";
     public static final String GROUP_ID = "GROUP_ID";
-    public static final String PROPERTY_MAP = "PROPERTY_MAP";
-    public static final String LAST_HEARTBEAT = "LAST_HEARTBEAT";
-    public static final String IS_NEW_NODE = "IS_NEW_NODE";
+    private static final String PROPERTY_MAP = "PROPERTY_MAP";
+    private static final String LAST_HEARTBEAT = "LAST_HEARTBEAT";
+    private static final String IS_NEW_NODE = "IS_NEW_NODE";
     public static final String TASK_MARK_NODE_NOT_NEW = "marking node as not new";
 
     //columns for cluster membership communication
     public static final String MEMBERSHIP_CHANGE_TYPE = "CHANGE_TYPE";
     public static final String MEMBERSHIP_CHANGED_MEMBER_ID = "CHANGED_MEMBER_ID";
-    public static final String REMOVED_MEMBER_ID = "REMOVED_MEMBER_ID";
+    private static final String REMOVED_MEMBER_ID = "REMOVED_MEMBER_ID";
     public static final String MEMBERSHIP_CHANGED_GROUP_ID = "CHANGED_GROUP_ID";
 
     public static final String PS_GET_COORDINATOR_NODE_ID =
@@ -68,11 +68,18 @@ public class RDBMSConstants {
                     + " VALUES (?,?,?,?,1)";
 
     /**
+     * Prepared statment to update properties map
+     */
+    public static final String PS_UPDATE_PROPERTIES_MAP =
+            "UPDATE " + CLUSTER_NODE_STATUS_TABLE + " SET " + PROPERTY_MAP + " =? WHERE " + NODE_ID + " =? AND "
+                    + GROUP_ID + " =?";
+
+    /**
      * Prepared statement to check if coordinator
      */
     public static final String PS_GET_COORDINATOR_ROW_FOR_NODE_ID =
             "SELECT " + LAST_HEARTBEAT + " FROM " + LEADER_STATUS_TABLE + " WHERE " + NODE_ID + "=?"
-                    + " AND " + GROUP_ID + "=?";
+                    + " AND " + GROUP_ID + " =?";
 
     /**
      * Prepared statement to check if still coordinator
@@ -165,12 +172,15 @@ public class RDBMSConstants {
 
     public static final String TASK_ADD_MESSAGE_ID = "adding message id";
     public static final String TASK_GET_ALL_QUEUES = "getting all queues";
+    public static final String TASK_CHECK_MEMBER_EXISTS = "checking if member already exists";
     public static final String TASK_ADD_COORDINATOR_ROW = "adding coordinator row";
     public static final String TASK_GET_COORDINATOR_INFORMATION = "reading coordinator information";
     public static final String TASK_CHECK_COORDINATOR_VALIDITY = "checking coordinator validity";
+    public static final String TASK_CHECK_IS_COORDINATOR = "checking is coordinator";
     public static final String TASK_UPDATE_COORDINATOR_HEARTBEAT = "updating coordinator heartbeat";
     public static final String TASK_UPDATE_NODE_HEARTBEAT = "updating node heartbeat";
     public static final String TASK_CREATE_NODE_HEARTBEAT = "creating node heartbeat";
+    public static final String TASK_UPDATE_PROPERTIES_MAP = "updating properties map";
     public static final String TASK_REMOVE_COORDINATOR = "removing coordinator heartbeat";
     public static final String TASK_REMOVE_NODE_HEARTBEAT = "removing node heartbeat entry";
 
@@ -193,14 +203,22 @@ public class RDBMSConstants {
                     + "                        GROUP_ID VARCHAR(512) NOT NULL,\n"
                     + "                        NODE_ID VARCHAR(512) NOT NULL,\n"
                     + "                        CHANGE_TYPE INT NOT NULL,\n"
-                    + "                        CHANGED_MEMBER_ID VARCHAR(512) NOT NULL,\n" + ");\n";
+                    + "                        CHANGED_MEMBER_ID VARCHAR(512) NOT NULL\n" + ");\n";
 
     public static final String CREATE_REMOVED_MEMBERS_TABLE =
             "CREATE TABLE IF NOT EXISTS REMOVED_MEMBERS_TABLE (\n"
                     + "                        GROUP_ID VARCHAR(512) NOT NULL,\n"
                     + "                        NODE_ID VARCHAR(512) NOT NULL,\n"
                     + "                        PROPERTY_MAP BLOB NOT NULL,\n"
-                    + "                        REMOVED_MEMBER_ID VARCHAR(512) NOT NULL,\n" + ");\n";
+                    + "                        REMOVED_MEMBER_ID VARCHAR(512) NOT NULL\n" + ");\n";
+
+    public static final String RDBMS_COORDINATION_DS = "datasource";
+
+    public static final String HEART_BEAT_INTERVAL = "heart.beat.interval";
+
+    public static final String EVENT_POLLING_INTERVAL = "event.polling.interval";
+
+    public static final String HEART_BEAT_MAX_AGE = "heart.beat.max.age";
 
     /**
      * Only public static constants are in this class. No need to instantiate.

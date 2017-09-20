@@ -20,12 +20,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.cluster.coordinator.commons.MemberEventListener;
 import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationStrategyConfiguration;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
+import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
+import org.wso2.carbon.cluster.coordinator.rdbms.util.RDBMSConstants;
 
-import javax.sql.DataSource;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -36,38 +37,31 @@ import java.util.concurrent.TimeUnit;
  */
 public class RDBMSMemberEventProcessor {
     /**
-     * Class logger.
+     * Class log.
      */
-    private static final Log logger = LogFactory.getLog(RDBMSMemberEventProcessor.class);
+    private static final Log log = LogFactory.getLog(RDBMSMemberEventProcessor.class);
+
     /**
      * Task map used store membership listener tasks.
      */
-    RDBMSMemberEventListenerTask membershipListenerTask;
+    private RDBMSMemberEventListenerTask membershipListenerTask;
+
     /**
      * Executor service used to run the event listening task.
      */
     private ScheduledExecutorService clusterMembershipReaderTaskScheduler;
+
     /**
      * Communication bus object to communicate with the database for the context store.
      */
     private RDBMSCommunicationBusContextImpl communicationBusContext;
 
-    public RDBMSMemberEventProcessor(String nodeId) {
-        this.communicationBusContext = new RDBMSCommunicationBusContextImpl();
+    public RDBMSMemberEventProcessor(String localNodeId, RDBMSCommunicationBusContextImpl communicationBusContext) {
+        this.communicationBusContext = communicationBusContext;
         ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("ClusterEventReaderTask-%d").build();
-        this.clusterMembershipReaderTaskScheduler = Executors
-                .newSingleThreadScheduledExecutor(namedThreadFactory);
-        addNewListenerTask(nodeId);
-    }
-
-    public RDBMSMemberEventProcessor(String nodeId, DataSource dataSource) {
-        this.communicationBusContext = new RDBMSCommunicationBusContextImpl(dataSource);
-        ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("ClusterEventReaderTask-%d").build();
-        this.clusterMembershipReaderTaskScheduler = Executors
-                .newSingleThreadScheduledExecutor(namedThreadFactory);
-        addNewListenerTask(nodeId, dataSource);
+        this.clusterMembershipReaderTaskScheduler = Executors.newSingleThreadScheduledExecutor(namedThreadFactory);
+        addNewListenerTask(localNodeId);
     }
 
     /**
@@ -75,34 +69,23 @@ public class RDBMSMemberEventProcessor {
      *
      * @param nodeId the node ID of the node which starts the listening
      */
-    public void addNewListenerTask(String nodeId) {
-        membershipListenerTask = new RDBMSMemberEventListenerTask(nodeId);
-        int scheduledPeriod = CoordinationStrategyConfiguration.getInstance().getRdbmsConfigs()
-                .get(CoordinationPropertyNames.RDBMS_BASED_EVENT_POLLING_INTERVAL);
-        this.clusterMembershipReaderTaskScheduler
-                .scheduleWithFixedDelay(membershipListenerTask, scheduledPeriod, scheduledPeriod,
-                        TimeUnit.MILLISECONDS);
-        if (logger.isDebugEnabled()) {
-            logger.debug("RDBMS cluster event listener started for node " + nodeId);
+    private void addNewListenerTask(String nodeId) {
+        Map<String, Object> strategyConfiguration = (Map<String, Object>) RDBMSCoordinationServiceHolder.
+                getClusterConfiguration().get(CoordinationPropertyNames.STRATEGY_CONFIG_NS);
+        int scheduledPeriod;
+        if (strategyConfiguration != null) {
+            scheduledPeriod = (int) strategyConfiguration.
+                    getOrDefault(RDBMSConstants.EVENT_POLLING_INTERVAL, 1000);
+        } else {
+            throw new ClusterCoordinationException("Cluster Configurations not found in" +
+                    " deployment.yaml, please check " + CoordinationPropertyNames.CLUSTER_CONFIG_NS +
+                    " namespace configurations");
         }
-    }
-
-    /**
-     * Add new listener task with the datasource.
-     *
-     * @param nodeId     the node ID of the node which starts the listening
-     * @param dataSource the datasource to connect to the database
-     */
-    public void addNewListenerTask(String nodeId, DataSource dataSource) {
-        membershipListenerTask = new RDBMSMemberEventListenerTask(nodeId, dataSource);
-        int scheduledPeriod = CoordinationStrategyConfiguration.getInstance().getRdbmsConfigs()
-                .get(CoordinationPropertyNames.RDBMS_BASED_EVENT_POLLING_INTERVAL);
-        ;
-        this.clusterMembershipReaderTaskScheduler
-                .scheduleWithFixedDelay(membershipListenerTask, scheduledPeriod, scheduledPeriod,
-                        TimeUnit.MILLISECONDS);
-        if (logger.isDebugEnabled()) {
-            logger.debug("RDBMS cluster event listener started for node " + nodeId);
+        membershipListenerTask = new RDBMSMemberEventListenerTask(nodeId, communicationBusContext);
+        this.clusterMembershipReaderTaskScheduler.scheduleWithFixedDelay(membershipListenerTask,
+                scheduledPeriod, scheduledPeriod, TimeUnit.MILLISECONDS);
+        if (log.isDebugEnabled()) {
+            log.debug("RDBMS cluster event listener started for node " + nodeId);
         }
     }
 
@@ -123,9 +106,8 @@ public class RDBMSMemberEventProcessor {
      * @throws ClusterCoordinationException
      */
     public void notifyMembershipEvent(String nodeID, String groupID, List<String> nodes,
-            MemberEventType membershipEventType) throws ClusterCoordinationException {
-        this.communicationBusContext
-                .storeMembershipEvent(nodeID, groupID, nodes, membershipEventType.getCode());
+                                      MemberEventType membershipEventType) throws ClusterCoordinationException {
+        this.communicationBusContext.storeMembershipEvent(nodeID, groupID, nodes, membershipEventType.getCode());
     }
 
     /**
@@ -140,10 +122,9 @@ public class RDBMSMemberEventProcessor {
     /**
      * Remove a previously added listener.
      *
-     * @param groupId            groupID of the group, which listener removes from
      * @param membershipListener membership listener object
      */
-    public void removeEventListener(String groupId, MemberEventListener membershipListener) {
+    public void removeEventListener(MemberEventListener membershipListener) {
         membershipListenerTask.removeEventListener(membershipListener);
     }
 }
