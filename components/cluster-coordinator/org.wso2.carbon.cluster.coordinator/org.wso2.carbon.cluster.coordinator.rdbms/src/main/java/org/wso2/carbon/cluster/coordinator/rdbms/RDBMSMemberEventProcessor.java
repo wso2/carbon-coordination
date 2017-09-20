@@ -37,9 +37,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class RDBMSMemberEventProcessor {
     /**
-     * Class logger.
+     * Class log.
      */
-    private static final Log logger = LogFactory.getLog(RDBMSMemberEventProcessor.class);
+    private static final Log log = LogFactory.getLog(RDBMSMemberEventProcessor.class);
 
     /**
      * Task map used store membership listener tasks.
@@ -84,8 +84,8 @@ public class RDBMSMemberEventProcessor {
         membershipListenerTask = new RDBMSMemberEventListenerTask(nodeId, communicationBusContext);
         this.clusterMembershipReaderTaskScheduler.scheduleWithFixedDelay(membershipListenerTask,
                 scheduledPeriod, scheduledPeriod, TimeUnit.MILLISECONDS);
-        if (logger.isDebugEnabled()) {
-            logger.debug("RDBMS cluster event listener started for node " + nodeId);
+        if (log.isDebugEnabled()) {
+            log.debug("RDBMS cluster event listener started for node " + nodeId);
         }
     }
 

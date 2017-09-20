@@ -20,7 +20,6 @@ import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
 /**
  * Data holder class for Cluster coordination service
  */
-
 public class ClusterCoordinationServiceDataHolder {
 
     /**

@@ -31,9 +31,9 @@ import java.util.List;
 class RDBMSMemberEventListenerTask implements Runnable {
 
     /**
-     * Class logger.
+     * Class log.
      */
-    private static final Log logger = LogFactory.getLog(RDBMSMemberEventListenerTask.class);
+    private static final Log log = LogFactory.getLog(RDBMSMemberEventListenerTask.class);
 
     /**
      * Node id of the node for which the reader reads member changes.
@@ -77,17 +77,17 @@ class RDBMSMemberEventListenerTask implements Runnable {
                             notifyCoordinatorChangeEvent(event.getTargetNodeId(), event.getTargetGroupId());
                             break;
                         default:
-                            logger.error("Unknown cluster event type: " + event.getMembershipEventType());
+                            log.error("Unknown cluster event type: " + event.getMembershipEventType());
                             break;
                         }
                 }
             } else {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("No membership events to sync");
+                if (log.isDebugEnabled()) {
+                    log.debug("No membership events to sync");
                 }
             }
         } catch (Throwable e) {
-            logger.warn("Error occurred while reading membership events. ", e);
+            log.warn("Error occurred while reading membership events. ", e);
         }
     }
 
