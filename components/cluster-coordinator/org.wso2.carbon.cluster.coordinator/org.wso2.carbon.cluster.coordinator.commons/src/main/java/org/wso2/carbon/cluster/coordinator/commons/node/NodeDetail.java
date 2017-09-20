@@ -62,8 +62,8 @@ public class NodeDetail {
      * @param propertiesMap the map of properties
      * @param isNewNode     true if new node
      */
-    public NodeDetail(String nodeId, String groupId, boolean isCoordinator, long lastHeartbeat,
-            boolean isNewNode, Map<String, Object> propertiesMap) {
+    public NodeDetail(String nodeId, String groupId, boolean isCoordinator, long lastHeartbeat, boolean isNewNode,
+                      Map<String, Object> propertiesMap) {
         this.nodeId = nodeId;
         this.lastHeartbeat = lastHeartbeat;
         this.isNewNode = isNewNode;
@@ -80,8 +80,7 @@ public class NodeDetail {
      * @param isCoordinator check if this node is the coordinator
      * @param isNewNode     true if new node
      */
-    public NodeDetail(String nodeId, String groupId, boolean isCoordinator, long lastHeartbeat,
-                      boolean isNewNode) {
+    public NodeDetail(String nodeId, String groupId, boolean isCoordinator, long lastHeartbeat, boolean isNewNode) {
         this.nodeId = nodeId;
         this.lastHeartbeat = lastHeartbeat;
         this.isNewNode = isNewNode;

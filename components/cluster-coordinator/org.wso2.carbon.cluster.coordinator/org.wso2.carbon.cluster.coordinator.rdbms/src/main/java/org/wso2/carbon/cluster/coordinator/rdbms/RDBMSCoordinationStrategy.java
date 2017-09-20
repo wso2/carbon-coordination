@@ -15,7 +15,6 @@
 
 package org.wso2.carbon.cluster.coordinator.rdbms;
 
-
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -46,9 +45,9 @@ import javax.sql.DataSource;
 public class RDBMSCoordinationStrategy implements CoordinationStrategy {
 
     /**
-     * Class logger.
+     * Class log.
      */
-    private static Log logger = LogFactory.getLog(RDBMSCoordinationStrategy.class);
+    private static Log log = LogFactory.getLog(RDBMSCoordinationStrategy.class);
 
     /**
      * Heartbeat interval in seconds.
@@ -87,7 +86,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
 
     /**
      * Possible node states
-     *
+     * <p>
      * +-----------+            +-------------+
      * |   MEMBER  +<---------->+ Coordinator |
      * +-----------+            +-------------+
@@ -146,9 +145,9 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             if (configProvider != null) {
                 this.localNodeId = (String) configProvider.getConfigurationMap("wso2.carbon").get("id");
             } else {
-                logger.warn("The id of the server has not been set in wso2.carbon namespace of deployment.yaml." +
-                        " Some features may not work correctly unless this configuration is specified.");
                 this.localNodeId = generateRandomId();
+                log.warn("The id of the server has not been set in wso2.carbon namespace of deployment.yaml. " +
+                        " auto-generated value of " + this.localNodeId + " will be used as the node Id.");
             }
         } catch (CarbonConfigurationException e) {
             throw new ClusterCoordinationException("The id has not been set in wso2.carbon namespace under" +
@@ -205,8 +204,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         if (!isNodeExist) {
             CoordinatorElectionTask coordinatorElectionTask = new CoordinatorElectionTask(localNodeId,
                     localGroupId, propertiesMap);
-            this.threadExecutor.scheduleAtFixedRate(coordinatorElectionTask, 0,
-                    heartBeatInterval, TimeUnit.MILLISECONDS);
+            this.threadExecutor.scheduleAtFixedRate(coordinatorElectionTask, 0, heartBeatInterval,
+                    TimeUnit.MILLISECONDS);
         } else {
             throw new ClusterCoordinationException("Node with ID " + localNodeId + " in group " + localGroupId +
                     " already exists.");
@@ -275,8 +274,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         @Override
         public void run() {
             try {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Current node state: " + currentNodeState);
+                if (log.isDebugEnabled()) {
+                    log.debug("Current node state: " + currentNodeState);
                 }
                 switch (currentNodeState) {
                     case MEMBER:
@@ -288,7 +287,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                 }
                 // We are catching throwable to avoid subsequent executions getting suppressed
             } catch (Throwable e) {
-                logger.error("Error detected while running coordination algorithm. Node became a "
+                log.error("Error detected while running coordination algorithm. Node became a "
                         + NodeState.MEMBER + " node in group " + localGroupId, e);
 
                 currentNodeState = NodeState.MEMBER;
@@ -305,8 +304,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             updateNodeHeartBeat();
             boolean coordinatorValid = communicationBusContext.checkIfCoordinatorValid(localGroupId, heartbeatMaxAge);
             if (!coordinatorValid) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Node ID :" + localNodeId
+                if (log.isDebugEnabled()) {
+                    log.debug("Node ID :" + localNodeId
                             + " Going for election since the Coordinator is invalid for group ID: " + localGroupId);
                 }
                 communicationBusContext.removeCoordinator(localGroupId, heartbeatMaxAge);
@@ -343,8 +342,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                 List<NodeDetail> allNodeInformation = communicationBusContext.getAllNodeData(localGroupId);
                 findAddedRemovedMembers(allNodeInformation, currentTimeMillis);
             } else {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Going for election since Coordinator state is lost in group " + localGroupId);
+                if (log.isDebugEnabled()) {
+                    log.debug("Going for election since Coordinator state is lost in group " + localGroupId);
                 }
                 performElectionTask();
             }
@@ -386,8 +385,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
          */
         private void notifyAddedMembers(List<String> newNodes, List<String> allActiveNodeIds) {
             for (String newNode : newNodes) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Member added " + newNode + "to group " + localGroupId);
+                if (log.isDebugEnabled()) {
+                    log.debug("Member added " + newNode + "to group " + localGroupId);
                 }
                 rdbmsMemberEventProcessor.notifyMembershipEvent(newNode, localGroupId, allActiveNodeIds,
                         MemberEventType.MEMBER_ADDED);
@@ -417,8 +416,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                                           List<NodeDetail> removedNodeDetails) {
             storeRemovedMemberDetails(allActiveNodeIds, removedNodeDetails);
             for (String removedNode : removedNodes) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Member removed " + removedNode + "from group " + localGroupId);
+                if (log.isDebugEnabled()) {
+                    log.debug("Member removed " + removedNode + "from group " + localGroupId);
                 }
                 rdbmsMemberEventProcessor.notifyMembershipEvent(removedNode, localGroupId, allActiveNodeIds,
                         MemberEventType.MEMBER_REMOVED);
@@ -434,8 +433,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             try {
                 this.currentNodeState = tryToElectSelfAsCoordinator();
             } catch (ClusterCoordinationException e) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Current node became a " + NodeState.MEMBER + " node in group "
+                if (log.isDebugEnabled()) {
+                    log.debug("Current node became a " + NodeState.MEMBER + " node in group "
                             + localGroupId, e);
                 }
                 this.currentNodeState = NodeState.MEMBER;
@@ -453,16 +452,16 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             NodeState nextState;
             boolean electedAsCoordinator = communicationBusContext.createCoordinatorEntry(localNodeId, localGroupId);
             if (electedAsCoordinator) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Elected current node as the coordinator in group " + localGroupId);
+                if (log.isDebugEnabled()) {
+                    log.debug("Elected current node as the coordinator in group " + localGroupId);
                 }
                 nextState = NodeState.COORDINATOR;
                 // notify nodes about coordinator change
                 rdbmsMemberEventProcessor.notifyMembershipEvent(localNodeId, localGroupId, getAllNodeIdentifiers(),
                         MemberEventType.COORDINATOR_CHANGED);
             } else {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Election resulted in current node becoming a " + NodeState.MEMBER
+                if (log.isDebugEnabled()) {
+                    log.debug("Election resulted in current node becoming a " + NodeState.MEMBER
                             + " node in group " + localGroupId);
                 }
                 nextState = NodeState.MEMBER;

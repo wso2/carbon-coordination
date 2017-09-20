@@ -201,6 +201,9 @@ public interface CommunicationBusContext {
      * @param nodeId is the Id of the node whose properties are being updated
      * @param groupId is the group which the node belongs to
      * @param propertiesMap the map of properties to be updated
+     *
+     * @throws ClusterCoordinationException
      */
-    void updatePropertiesMap(String nodeId, String groupId, Map<String, Object> propertiesMap);
+    void updatePropertiesMap(String nodeId, String groupId, Map<String, Object> propertiesMap)
+            throws ClusterCoordinationException;
 }
