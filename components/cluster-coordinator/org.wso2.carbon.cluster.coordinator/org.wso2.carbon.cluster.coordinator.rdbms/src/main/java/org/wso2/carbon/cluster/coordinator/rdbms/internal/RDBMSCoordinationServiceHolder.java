@@ -15,8 +15,8 @@
 
 package org.wso2.carbon.cluster.coordinator.rdbms.internal;
 
+import org.wso2.carbon.config.provider.ConfigProvider;
 import org.wso2.carbon.datasource.core.api.DataSourceService;
-import org.wso2.carbon.kernel.configprovider.ConfigProvider;
 
 import java.util.Map;
 

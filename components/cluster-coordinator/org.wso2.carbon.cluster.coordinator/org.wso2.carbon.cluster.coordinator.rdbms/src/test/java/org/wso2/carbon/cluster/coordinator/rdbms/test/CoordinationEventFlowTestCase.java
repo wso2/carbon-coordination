@@ -38,7 +38,6 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
 
     @BeforeClass
     public void initialize() throws InterruptedException, FileNotFoundException {
-        System.setProperty("carbon.home", "src/test/resources");
         init();
         rdbmsCoordinationStrategyNodeOne = new RDBMSCoordinationStrategy(dataSource);
         rdbmsCoordinationStrategyNodeTwo = new RDBMSCoordinationStrategy(dataSource);

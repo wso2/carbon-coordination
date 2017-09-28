@@ -21,11 +21,15 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
-import org.wso2.carbon.kernel.configprovider.CarbonConfigurationException;
-import org.wso2.carbon.kernel.configprovider.ConfigProvider;
-import org.wso2.carbon.kernel.configprovider.YAMLBasedConfigFileReader;
-import org.wso2.carbon.kernel.internal.configprovider.ConfigProviderImpl;
+import org.wso2.carbon.config.ConfigurationException;
+import org.wso2.carbon.config.provider.ConfigProvider;
+import org.wso2.carbon.config.provider.ConfigProviderImpl;
+import org.wso2.carbon.config.reader.YAMLBasedConfigFileReader;
+import org.wso2.carbon.secvault.internal.SecureVaultImpl;
 
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -72,12 +76,20 @@ public class RDBMSCoordinationStratergyBaseTest {
     protected DataSource dataSource;
 
     protected void init() {
-        ConfigProvider configProvider = new ConfigProviderImpl(new YAMLBasedConfigFileReader("deployment.yaml"));
+        Path deploymentPath = null;
         try {
-            Map<String, Object> clusterConfig = configProvider.
-                    getConfigurationMap(CoordinationPropertyNames.CLUSTER_CONFIG_NS);
+            deploymentPath = Paths.get(ClassLoader.getSystemResource("conf/deployment.yaml").toURI());
+        } catch (URISyntaxException e) {
+            log.error("The URI for deployment.yaml in invalid", e);
+        }
+        ConfigProvider configProvider = new ConfigProviderImpl(new YAMLBasedConfigFileReader(deploymentPath),
+                new SecureVaultImpl());
+
+        try {
+            Map clusterConfig = (Map) configProvider.
+                    getConfigurationObject(CoordinationPropertyNames.CLUSTER_CONFIG_NS);
             RDBMSCoordinationServiceHolder.setClusterConfiguration(clusterConfig);
-        } catch (CarbonConfigurationException e) {
+        } catch (ConfigurationException e) {
             log.error("Configuration file deployment.yaml not found in resources folder " + e);
         }
         try {
