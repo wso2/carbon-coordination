@@ -29,8 +29,8 @@ import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyN
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.zookeeper.ZookeeperCoordinationStrategy;
 import org.wso2.carbon.cluster.coordinator.zookeeper.exception.ZookeeperCoordinationConfigurationException;
-import org.wso2.carbon.kernel.configprovider.CarbonConfigurationException;
-import org.wso2.carbon.kernel.configprovider.ConfigProvider;
+import org.wso2.carbon.config.ConfigurationException;
+import org.wso2.carbon.config.provider.ConfigProvider;
 
 import java.io.IOException;
 import java.util.Map;
@@ -56,19 +56,18 @@ public class ZookeeperCoordinationServiceComponent {
      * are satisfied.
      *
      * @param bundleContext the bundle context instance of this bundle.
-     * @throws Exception this will be thrown if an issue occurs while executing the activate method
      */
     @Activate
     protected void start(BundleContext bundleContext) {
 
         log.info("Getting the Coordination Strategy");
 
-        Map<String, Object> clusterConfiguration = null;
+        Map clusterConfiguration = null;
         try {
-            clusterConfiguration = ZookeeperCoordinationServiceHolder.getConfigProvider().
-                    getConfigurationMap(CoordinationPropertyNames.CLUSTER_CONFIG_NS);
+            clusterConfiguration = (Map) ZookeeperCoordinationServiceHolder.getConfigProvider().
+                    getConfigurationObject(CoordinationPropertyNames.CLUSTER_CONFIG_NS);
             ZookeeperCoordinationServiceHolder.setClusterConfiguration(clusterConfiguration);
-        } catch (CarbonConfigurationException e) {
+        } catch (ConfigurationException e) {
             throw new ClusterCoordinationException("Configurations for cluster coordination is not " +
                     "available in deployment.yaml");
         }
@@ -111,7 +110,7 @@ public class ZookeeperCoordinationServiceComponent {
             policy = ReferencePolicy.DYNAMIC,
             unbind = "unregisterConfigProvider"
     )
-    protected void registerConfigProvider(ConfigProvider configProvider) throws CarbonConfigurationException {
+    protected void registerConfigProvider(ConfigProvider configProvider) throws ConfigurationException {
         ZookeeperCoordinationServiceHolder.setConfigProvider(configProvider);
     }
 

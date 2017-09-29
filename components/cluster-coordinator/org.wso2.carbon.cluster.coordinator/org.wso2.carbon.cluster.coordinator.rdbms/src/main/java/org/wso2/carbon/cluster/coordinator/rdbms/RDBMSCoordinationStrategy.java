@@ -26,8 +26,8 @@ import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
 import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
 import org.wso2.carbon.cluster.coordinator.rdbms.util.RDBMSConstants;
-import org.wso2.carbon.kernel.configprovider.CarbonConfigurationException;
-import org.wso2.carbon.kernel.configprovider.ConfigProvider;
+import org.wso2.carbon.config.ConfigurationException;
+import org.wso2.carbon.config.provider.ConfigProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -143,13 +143,13 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         try {
             ConfigProvider configProvider = RDBMSCoordinationServiceHolder.getConfigProvider();
             if (configProvider != null) {
-                this.localNodeId = (String) configProvider.getConfigurationMap("wso2.carbon").get("id");
+                this.localNodeId = (String) ((Map) configProvider.getConfigurationObject("wso2.carbon")).get("id");
             } else {
                 this.localNodeId = generateRandomId();
                 log.warn("The id of the server has not been set in wso2.carbon namespace of deployment.yaml. " +
                         " auto-generated value of " + this.localNodeId + " will be used as the node Id.");
             }
-        } catch (CarbonConfigurationException e) {
+        } catch (ConfigurationException e) {
             throw new ClusterCoordinationException("The id has not been set in wso2.carbon namespace under" +
                     " the id property.");
         }

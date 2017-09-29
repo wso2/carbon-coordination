@@ -70,7 +70,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         }
         String datasourceName = (String) strategyConfiguration.get(RDBMSConstants.RDBMS_COORDINATION_DS);
         if (datasourceName == null) {
-            throw new ClusterCoordinationException("No datasource specified to be used with RDBMS Coordination" +
+            throw new ClusterCoordinationException("No datasource specified to be used with RDBMS Coordination " +
                     "Strategy. Please check configurations under " + CoordinationPropertyNames.CLUSTER_CONFIG_NS);
         }
         DataSourceService dataSourceService = RDBMSCoordinationServiceHolder.getDataSourceService();

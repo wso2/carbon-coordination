@@ -53,9 +53,8 @@ public class ZooKeeperService {
      * Retrieve data of the a zookeeper node.
      *
      * @param path path of the zookeeper node
-     * @return
-     * @throws KeeperException
-     * @throws InterruptedException
+     * @return data of specified zookeeper node
+     * @throws KeeperException retains result if exception thrown
      */
     public byte[] getData(String path) throws KeeperException, InterruptedException {
         return zooKeeper.getData(path, true, zooKeeper.exists(path, true));

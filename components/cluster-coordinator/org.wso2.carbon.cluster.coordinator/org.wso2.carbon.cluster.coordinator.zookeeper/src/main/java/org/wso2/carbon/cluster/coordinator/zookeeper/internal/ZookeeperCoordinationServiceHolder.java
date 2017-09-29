@@ -15,7 +15,7 @@
 
 package org.wso2.carbon.cluster.coordinator.zookeeper.internal;
 
-import org.wso2.carbon.kernel.configprovider.ConfigProvider;
+import org.wso2.carbon.config.provider.ConfigProvider;
 
 import java.util.Map;
 

@@ -28,9 +28,9 @@ import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
 import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy;
+import org.wso2.carbon.config.ConfigurationException;
+import org.wso2.carbon.config.provider.ConfigProvider;
 import org.wso2.carbon.datasource.core.api.DataSourceService;
-import org.wso2.carbon.kernel.configprovider.CarbonConfigurationException;
-import org.wso2.carbon.kernel.configprovider.ConfigProvider;
 
 
 import java.util.Map;
@@ -55,17 +55,17 @@ public class RDBMSCoordinationServiceComponent {
     @Activate
     protected void start(BundleContext bundleContext) {
 
-        Map<String, Object> clusterConfiguration;
+        Map clusterConfiguration;
         try {
-            clusterConfiguration = RDBMSCoordinationServiceHolder.getConfigProvider().
-                    getConfigurationMap(CoordinationPropertyNames.CLUSTER_CONFIG_NS);
+            clusterConfiguration = (Map) RDBMSCoordinationServiceHolder.getConfigProvider().
+                    getConfigurationObject(CoordinationPropertyNames.CLUSTER_CONFIG_NS);
             if (clusterConfiguration != null) {
                 RDBMSCoordinationServiceHolder.setClusterConfiguration(clusterConfiguration);
             } else {
                 throw new ClusterCoordinationException("Configurations for cluster coordination is not " +
                         "available in deployment.yaml");
             }
-        } catch (CarbonConfigurationException e) {
+        } catch (ConfigurationException e) {
             throw new ClusterCoordinationException("Error in reading the cluster coordination configurations " +
                     "from deployment.yaml");
         }
@@ -101,7 +101,7 @@ public class RDBMSCoordinationServiceComponent {
             policy = ReferencePolicy.DYNAMIC,
             unbind = "unregisterConfigProvider"
     )
-    protected void registerConfigProvider(ConfigProvider configProvider) throws CarbonConfigurationException {
+    protected void registerConfigProvider(ConfigProvider configProvider) throws ConfigurationException {
         RDBMSCoordinationServiceHolder.setConfigProvider(configProvider);
     }
 
