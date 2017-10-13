@@ -78,6 +78,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
 
     /**
      * Constructor which uses a specified DataSource.
+     *
      * @param dataSource the DataSource to be used
      */
     public RDBMSCommunicationBusContextImpl(DataSource dataSource) {
