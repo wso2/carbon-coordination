@@ -25,7 +25,7 @@ public class CoordinatorConfigGroupIdTestCase {
 
     @Test(expectedExceptions = ClusterCoordinationException.class)
     public void testGroupIdNotDefined() throws InterruptedException {
-        RDBMSCoordinationStrategyUtil.init("conf" + File.separator + "deploymentThree.yaml", "dbFive");
+        RDBMSCoordinationStrategyUtil.init("conf" + File.separator + "deploymentThree.yaml", "dbThree");
         RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeOne = new RDBMSCoordinationStrategy(
                 RDBMSCoordinationStrategyUtil.dataSource);
         rdbmsCoordinationStrategyNodeOne.joinGroup();

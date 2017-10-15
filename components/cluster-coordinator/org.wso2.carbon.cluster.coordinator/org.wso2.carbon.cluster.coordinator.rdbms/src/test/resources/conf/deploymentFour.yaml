@@ -197,7 +197,7 @@ state.persistence:
 
 cluster.config:
   enabled: true
-  group.id: testGroupOne
-  coordination.strategy.class: org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy
-  strategy.config:
+  groupId: testGroupOne
+  coordinationStrategyClass: org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy
+  strategyConfig:
     datasource: WSO2_CLUSTER_DB

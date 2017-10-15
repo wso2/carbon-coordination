@@ -25,7 +25,7 @@ public class CoordinatorConfigDefaultValuesTestCase {
 
     @Test
     public void testDefaultValues() throws InterruptedException {
-        RDBMSCoordinationStrategyUtil.init("conf" + File.separator + "deploymentFour.yaml", "dbThree");
+        RDBMSCoordinationStrategyUtil.init("conf" + File.separator + "deploymentFour.yaml", "dbFour");
         RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeOne = new RDBMSCoordinationStrategy(
                 RDBMSCoordinationStrategyUtil.dataSource);
         rdbmsCoordinationStrategyNodeOne.joinGroup();
