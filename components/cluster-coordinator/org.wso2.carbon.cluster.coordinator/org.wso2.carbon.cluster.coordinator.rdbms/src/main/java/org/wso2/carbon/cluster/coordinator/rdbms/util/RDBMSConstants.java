@@ -214,11 +214,11 @@ public class RDBMSConstants {
 
     public static final String RDBMS_COORDINATION_DS = "datasource";
 
-    public static final String HEART_BEAT_INTERVAL = "heart.beat.interval";
+    public static final String HEART_BEAT_INTERVAL = "heartbeatInterval";
 
-    public static final String EVENT_POLLING_INTERVAL = "event.polling.interval";
+    public static final String EVENT_POLLING_INTERVAL = "eventPollingInterval";
 
-    public static final String HEART_BEAT_MAX_AGE = "heart.beat.max.age";
+    public static final String HEART_BEAT_MAX_AGE = "heartbeatMaxAge";
 
     /**
      * Only public static constants are in this class. No need to instantiate.
