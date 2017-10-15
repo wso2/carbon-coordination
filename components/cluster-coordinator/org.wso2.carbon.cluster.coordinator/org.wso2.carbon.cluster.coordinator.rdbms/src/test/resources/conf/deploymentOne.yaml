@@ -197,10 +197,10 @@ state.persistence:
 
 cluster.config:
   enabled: true
-  group.id: testGroupOne
-  coordination.strategy.class: org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy
-  strategy.config:
+  groupId: testGroupOne
+  coordinationStrategyClass: org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy
+  strategyConfig:
     datasource: WSO2_CLUSTER_DB
-    heart.beat.interval: 1000
-    heart.beat.max.age: 2
-    event.polling.interval: 1000
+    heartbeatInterval: 1000
+    heartbeatMaxAge: 2
+    eventPollingInterval: 1000

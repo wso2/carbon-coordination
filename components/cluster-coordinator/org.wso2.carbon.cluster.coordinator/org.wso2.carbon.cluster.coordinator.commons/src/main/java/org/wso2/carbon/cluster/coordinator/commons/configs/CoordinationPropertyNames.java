@@ -22,11 +22,11 @@ public class CoordinationPropertyNames {
 
     public static final String CLUSTER_CONFIG_NS = "cluster.config";
 
-    public static final String STRATEGY_CONFIG_NS = "strategy.config";
+    public static final String STRATEGY_CONFIG_NS = "strategyConfig";
 
-    public static final String COORDINATION_STRATEGY_CLASS_PROPERTY = "coordination.strategy.class";
+    public static final String COORDINATION_STRATEGY_CLASS_PROPERTY = "coordinationStrategyClass";
 
-    public static final String GROUP_ID_PROPERTY = "group.id";
+    public static final String GROUP_ID_PROPERTY = "groupId";
 
     public static final String ENABLED_PROPERTY = "enabled";
 
