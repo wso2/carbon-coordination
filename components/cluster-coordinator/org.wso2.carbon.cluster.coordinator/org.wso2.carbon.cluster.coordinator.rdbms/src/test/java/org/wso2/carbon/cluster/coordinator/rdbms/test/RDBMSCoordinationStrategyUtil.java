@@ -36,9 +36,9 @@ import java.sql.SQLException;
 import java.util.Map;
 import javax.sql.DataSource;
 
-public class RDBMSCoordinationStratergyBaseTest {
+public class RDBMSCoordinationStrategyUtil {
 
-    private static final Log log = LogFactory.getLog(RDBMSCoordinationStratergyBaseTest.class);
+    private static final Log log = LogFactory.getLog(RDBMSCoordinationStrategyUtil.class);
     private static final String DROP_LEADER_STATUS_TABLE = "DROP TABLE LEADER_STATUS_TABLE;";
     private static final String DROP_CLUSTER_NODE_STATUS_TABLE = "DROP TABLE CLUSTER_NODE_STATUS_TABLE;";
     private static final String DROP_MEMBERSHIP_EVENT_TABLE = "DROP TABLE MEMBERSHIP_EVENT_TABLE;";
@@ -73,14 +73,14 @@ public class RDBMSCoordinationStratergyBaseTest {
     private static final String CLEAR_CLUSTER_NODE_STATUS_TABLE = "DELETE FROM CLUSTER_NODE_STATUS_TABLE;";
     private static final String CLEAR_MEMBERSHIP_EVENT_TABLE = "DELETE FROM MEMBERSHIP_EVENT_TABLE;";
     private static final String CLEAR_REMOVED_MEMBERS_TABLE = "DELETE FROM REMOVED_MEMBERS_TABLE;";
-    protected DataSource dataSource;
+    public static DataSource dataSource;
 
-    protected void init() {
+    static void init(String deploymentFile, String databaseName) {
         Path deploymentPath = null;
         try {
-            deploymentPath = Paths.get(ClassLoader.getSystemResource("conf/deployment.yaml").toURI());
+            deploymentPath = Paths.get(ClassLoader.getSystemResource(deploymentFile).toURI());
         } catch (URISyntaxException e) {
-            log.error("The URI for deployment.yaml in invalid", e);
+            log.error("The URI for " + deploymentFile + " in invalid", e);
         }
         ConfigProvider configProvider = new ConfigProviderImpl(new YAMLBasedConfigFileReader(deploymentPath),
                 new SecureVaultImpl());
@@ -90,17 +90,16 @@ public class RDBMSCoordinationStratergyBaseTest {
                     getConfigurationObject(CoordinationPropertyNames.CLUSTER_CONFIG_NS);
             RDBMSCoordinationServiceHolder.setClusterConfiguration(clusterConfig);
         } catch (ConfigurationException e) {
-            log.error("Configuration file deployment.yaml not found in resources folder " + e);
+            log.error("Configuration file " + deploymentFile + " not found in resources folder " + e);
         }
         try {
             Class.forName("org.h2.Driver");
             JdbcDataSource h2DataSource = new JdbcDataSource();
-            h2DataSource.setURL("jdbc:h2:./target/"
-                    + "ANALYTICS_EVENT_STORE;DB_CLOSE_ON_EXIT=FALSE;LOCK_TIMEOUT=60000;AUTO_SERVER=true");
+            h2DataSource.setURL("jdbc:h2:./target/ANALYTICS_EVENT_STORE" + databaseName +
+                    ";DB_CLOSE_ON_EXIT=FALSE;LOCK_TIMEOUT=60000;AUTO_SERVER=true");
             h2DataSource.setUser("wso2carbon");
             h2DataSource.setPassword("wso2carbon");
-            this.dataSource = h2DataSource;
-            log.info("datasource initialized");
+            dataSource = h2DataSource;
             createTables();
             clearTables();
         } catch (ClassNotFoundException e) {
@@ -108,32 +107,32 @@ public class RDBMSCoordinationStratergyBaseTest {
         }
     }
 
-    public void clearTables() {
+    private static void clearTables() {
         executeQuery(CLEAR_LEADER_STATUS_TABLE);
         executeQuery(CLEAR_CLUSTER_NODE_STATUS_TABLE);
         executeQuery(CLEAR_MEMBERSHIP_EVENT_TABLE);
         executeQuery(CLEAR_REMOVED_MEMBERS_TABLE);
     }
 
-    private void createTables() {
+    private static void createTables() {
         executeQuery(CREATE_LEADER_STATUS_TABLE);
         executeQuery(CREATE_CLUSTER_NODE_STATUS_TABLE);
         executeQuery(CREATE_MEMBERSHIP_EVENT_TABLE);
         executeQuery(CREATE_REMOVED_MEMBERS_TABLE);
     }
 
-    public void dropTables() {
+    public static void dropTables() {
         executeQuery(DROP_LEADER_STATUS_TABLE);
         executeQuery(DROP_CLUSTER_NODE_STATUS_TABLE);
         executeQuery(DROP_MEMBERSHIP_EVENT_TABLE);
         executeQuery(DROP_REMOVED_MEMBERS_TABLE);
     }
 
-    private void executeQuery(String query) {
+    private static void executeQuery(String query) {
         Connection connection = null;
         PreparedStatement preparedStatement = null;
         try {
-            connection = this.dataSource.getConnection();
+            connection = dataSource.getConnection();
             connection.setAutoCommit(false);
             preparedStatement = connection.prepareStatement(query);
             preparedStatement.execute();

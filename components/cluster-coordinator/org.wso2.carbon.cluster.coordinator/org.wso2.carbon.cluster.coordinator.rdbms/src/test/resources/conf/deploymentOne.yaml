@@ -199,7 +199,6 @@ cluster.config:
   enabled: true
   group.id: testGroupOne
   coordination.strategy.class: org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy
-
   strategy.config:
     datasource: WSO2_CLUSTER_DB
     heart.beat.interval: 1000
