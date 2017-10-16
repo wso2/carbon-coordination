@@ -27,7 +27,7 @@
     <groupId>org.wso2.carbon.coordination</groupId>
     <artifactId>carbon-coordination</artifactId>
     <packaging>pom</packaging>
-    <version>2.0.2-SNAPSHOT</version>
+    <version>2.0.3-SNAPSHOT</version>
     <name>WSO2 Carbon Coordination - Parent</name>
 
     <modules>
@@ -260,7 +260,7 @@
     </dependencyManagement>
 
     <properties>
-        <carbon.coordination.version>2.0.2-SNAPSHOT</carbon.coordination.version>
+        <carbon.coordination.version>2.0.3-SNAPSHOT</carbon.coordination.version>
         <carbon.coordination.exp.package.version>${carbon.coordination.version}
         </carbon.coordination.exp.package.version>
         <jacoco.version>0.7.9</jacoco.version>
@@ -289,8 +289,9 @@
         <carbon.datasources.version>1.1.2</carbon.datasources.version>
         <commons.logging.version>1.2</commons.logging.version>
         <commons.logging.imp.package.version>[1.2,2.0)</commons.logging.imp.package.version>
-        <guava.version>19.0</guava.version>
-        <guava.imp.package.version>[19.0,20.0)</guava.imp.package.version>
+        <guava.version>20.0</guava.version>
+        <guava.bundle.version>20.0.0</guava.bundle.version>
+        <guava.imp.package.version>[20.0.0,21.0.0)</guava.imp.package.version>
         <apache.curator.imp.package.version>[2.6.0,2.9.0)</apache.curator.imp.package.version>
         <com.h2database.version>1.4.187</com.h2database.version>
         <org.testing.version>6.9.10</org.testing.version>
