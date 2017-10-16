@@ -26,7 +26,6 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
 import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
-import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy;
 import org.wso2.carbon.config.ConfigurationException;
 import org.wso2.carbon.config.provider.ConfigProvider;
@@ -62,12 +61,18 @@ public class RDBMSCoordinationServiceComponent {
             if (clusterConfiguration != null) {
                 RDBMSCoordinationServiceHolder.setClusterConfiguration(clusterConfiguration);
             } else {
-                throw new ClusterCoordinationException("Configurations for cluster coordination is not " +
-                        "available in deployment.yaml");
+                if (log.isDebugEnabled()) {
+                    log.debug(RDBMSCoordinationStrategy.class.getCanonicalName() + " will not be activated because " +
+                            "no configurations found");
+                }
+                return;
             }
         } catch (ConfigurationException e) {
-            throw new ClusterCoordinationException("Error in reading the cluster coordination configurations " +
-                    "from deployment.yaml");
+            if (log.isDebugEnabled()) {
+                log.debug(RDBMSCoordinationStrategy.class.getCanonicalName() + " will not be activated because " +
+                        "no configurations found");
+            }
+            return;
         }
         if ((Boolean) clusterConfiguration.get(CoordinationPropertyNames.ENABLED_PROPERTY)) {
             if (clusterConfiguration.get(CoordinationPropertyNames.COORDINATION_STRATEGY_CLASS_PROPERTY).

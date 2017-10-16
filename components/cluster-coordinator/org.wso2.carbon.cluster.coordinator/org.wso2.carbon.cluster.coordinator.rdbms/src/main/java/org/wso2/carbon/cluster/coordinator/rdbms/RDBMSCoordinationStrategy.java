@@ -174,8 +174,11 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
     }
 
     @Override
-    public boolean isLeaderNode() {
+    public boolean isLeaderNode() throws ClusterCoordinationException {
         NodeDetail nodeDetail = communicationBusContext.getNodeData(localNodeId, localGroupId);
+        if (nodeDetail == null) {
+            nodeDetail = communicationBusContext.getNodeData(localNodeId, localGroupId);
+        }
         return nodeDetail.isCoordinator();
     }
 
