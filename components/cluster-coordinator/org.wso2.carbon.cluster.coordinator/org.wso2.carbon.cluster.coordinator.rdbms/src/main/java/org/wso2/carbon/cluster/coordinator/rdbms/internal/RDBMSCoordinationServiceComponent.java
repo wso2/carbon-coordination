@@ -85,8 +85,8 @@ public class RDBMSCoordinationServiceComponent {
                         clusterConfiguration.get(CoordinationPropertyNames.COORDINATION_STRATEGY_CLASS_PROPERTY));
             }
         } else {
-            log.info("Cluster Coordination has been disabled. Enable it in deployment.yaml " +
-                    "to use the clustering service for ");
+            log.info("Cluster coordination has been disabled. Enable it in deployment.yaml " +
+                    "to use the clustering service");
         }
     }
 
