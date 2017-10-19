@@ -182,25 +182,9 @@ wso2.artifact.deployment:
     # Scheduler update interval
   updateInterval: 5
 
-
-  # HA Configuration
-state.persistence:
-  enabled: false
-  intervalInMin: 1
-  revisionsToKeep: 3
-  class: org.wso2.carbon.stream.processor.core.persistence.DBPersistenceStore
-  # config:
-    # location: siddhi-app-persistence
-  config:
-    datasource: WSO2_ANALYTICS_DB
-    table: PERSISTENCE_TABLE
-
 cluster.config:
   enabled: true
   groupId: testGroupOne
   coordinationStrategyClass: org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy
   strategyConfig:
-    datasource: WSO2_CLUSTER_DB
-    heartbeatInterval: 1000
-    heartbeatMaxAge: 2
-    eventPollingInterval: 1000
+    datasource: WSO2_CLUSTER_DB  # Datasource is not defined in yaml since test cases will internally create datasource

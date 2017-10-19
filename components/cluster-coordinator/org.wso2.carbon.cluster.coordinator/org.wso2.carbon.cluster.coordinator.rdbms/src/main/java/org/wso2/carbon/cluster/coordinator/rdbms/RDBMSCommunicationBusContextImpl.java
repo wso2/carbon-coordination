@@ -610,6 +610,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
         String coordinatorNodeId = getCoordinatorNodeId(groupId);
+        if (coordinatorNodeId == null) {
+            coordinatorNodeId = getCoordinatorNodeId(groupId);
+        }
         ArrayList<NodeDetail> nodeDataList = new ArrayList<NodeDetail>();
 
         try {
@@ -765,6 +768,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
         String coordinatorNodeId = getCoordinatorNodeId(groupId);
+        if (coordinatorNodeId == null) {
+            coordinatorNodeId = getCoordinatorNodeId(groupId);
+        }
         NodeDetail nodeDetail = null;
 
         try {
@@ -775,7 +781,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             resultSet = preparedStatement.executeQuery();
             Map<String, Object> propertiesMap = null;
             if (resultSet.next()) {
-                boolean isCoordinatorNode = coordinatorNodeId.equals(nodeId);
+                boolean isCoordinatorNode = nodeId.equals(coordinatorNodeId);
                 if (resultSet.getBlob(3) != null) {
                     int blobLength = (int) resultSet.getBlob(3).length();
                     byte[] bytes = resultSet.getBlob(3).getBytes(1L, blobLength);

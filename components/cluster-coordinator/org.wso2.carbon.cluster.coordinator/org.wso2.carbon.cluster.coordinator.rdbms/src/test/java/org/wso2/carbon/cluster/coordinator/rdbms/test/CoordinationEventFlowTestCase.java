@@ -23,25 +23,27 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBaseTest {
-    RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeOne;
-    RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeTwo;
-    RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeThree;
-    EventListener eventListener;
+public class CoordinationEventFlowTestCase {
+    private RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeOne;
+    private RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeTwo;
+    private RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeThree;
+    private EventListener eventListener;
 
     private static final Log log = LogFactory.getLog(CoordinationEventFlowTestCase.class);
 
     @BeforeClass
     public void initialize() throws InterruptedException, FileNotFoundException {
-        init();
-        rdbmsCoordinationStrategyNodeOne = new RDBMSCoordinationStrategy(dataSource);
-        rdbmsCoordinationStrategyNodeTwo = new RDBMSCoordinationStrategy(dataSource);
-        rdbmsCoordinationStrategyNodeThree = new RDBMSCoordinationStrategy(dataSource);
+        Thread.sleep(2000);
+        RDBMSCoordinationStrategyUtil.init("conf" + File.separator + "deploymentOne.yaml", "dbOne");
+        rdbmsCoordinationStrategyNodeOne = new RDBMSCoordinationStrategy(RDBMSCoordinationStrategyUtil.dataSource);
+        rdbmsCoordinationStrategyNodeTwo = new RDBMSCoordinationStrategy(RDBMSCoordinationStrategyUtil.dataSource);
+        rdbmsCoordinationStrategyNodeThree = new RDBMSCoordinationStrategy(RDBMSCoordinationStrategyUtil.dataSource);
         eventListener = new EventListener();
     }
 
@@ -154,7 +156,8 @@ public class CoordinationEventFlowTestCase extends RDBMSCoordinationStratergyBas
     public void testCoordinatorChanged() throws InterruptedException {
         int count;
         String leaderId = null;
-        RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeFour = new RDBMSCoordinationStrategy(dataSource);
+        RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeFour = new RDBMSCoordinationStrategy(
+                RDBMSCoordinationStrategyUtil.dataSource);
         Map<String, Object> nodeFourPropertyMap = new HashMap<>();
         nodeFourPropertyMap.put("id", "node4");
         rdbmsCoordinationStrategyNodeFour.joinGroup();
