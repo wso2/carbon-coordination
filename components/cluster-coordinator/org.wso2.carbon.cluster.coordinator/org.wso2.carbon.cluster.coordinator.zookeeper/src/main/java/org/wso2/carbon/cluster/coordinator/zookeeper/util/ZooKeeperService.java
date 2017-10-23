@@ -33,8 +33,7 @@ public class ZooKeeperService {
 
     private ZooKeeper zooKeeper;
 
-    public ZooKeeperService(final String url,
-            final ZookeeperCoordinationStrategy.ProcessNodeWatcher processNodeWatcher)
+    public ZooKeeperService(final String url, final ZookeeperCoordinationStrategy.ProcessNodeWatcher processNodeWatcher)
             throws IOException {
         zooKeeper = new ZooKeeper(url, 3000, processNodeWatcher);
     }
@@ -46,8 +45,7 @@ public class ZooKeeperService {
         try {
             zooKeeper.close();
         } catch (InterruptedException e) {
-            throw new ClusterCoordinationException(
-                    "Error while stopping zookeeper leader election process", e);
+            throw new ClusterCoordinationException("Error while stopping zookeeper leader election process", e);
         }
     }
 
@@ -55,9 +53,8 @@ public class ZooKeeperService {
      * Retrieve data of the a zookeeper node.
      *
      * @param path path of the zookeeper node
-     * @return
-     * @throws KeeperException
-     * @throws InterruptedException
+     * @return data of specified zookeeper node
+     * @throws KeeperException retains result if exception thrown
      */
     public byte[] getData(String path) throws KeeperException, InterruptedException {
         return zooKeeper.getData(path, true, zooKeeper.exists(path, true));
@@ -72,20 +69,16 @@ public class ZooKeeperService {
      * @param ephimeral The type of the node
      * @return the created node path
      */
-    public String createNode(final String node, byte[] data, final boolean watch,
-            final boolean ephimeral) {
+    public String createNode(final String node, byte[] data, final boolean watch, final boolean ephimeral) {
         String createdNodePath = null;
         try {
-
             final Stat nodeStat = zooKeeper.exists(node, watch);
-
             if (nodeStat == null) {
                 createdNodePath = zooKeeper.create(node, data, Ids.OPEN_ACL_UNSAFE,
                         (ephimeral ? CreateMode.EPHEMERAL_SEQUENTIAL : CreateMode.PERSISTENT));
             } else {
                 createdNodePath = node;
             }
-
         } catch (KeeperException | InterruptedException e) {
             throw new IllegalStateException(e);
         }
@@ -101,9 +94,7 @@ public class ZooKeeperService {
      * @return a list of children nodes
      */
     public List<String> getChildren(final String node, final boolean watch) {
-
         List<String> childNodes = null;
-
         try {
             childNodes = zooKeeper.getChildren(node, watch);
         } catch (KeeperException | InterruptedException e) {

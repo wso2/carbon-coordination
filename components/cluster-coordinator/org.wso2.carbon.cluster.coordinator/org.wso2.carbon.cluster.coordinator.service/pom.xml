@@ -8,7 +8,7 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>org.wso2.carbon.cluster.coordinator.rdbms</artifactId>
+    <artifactId>org.wso2.carbon.cluster.coordinator.service</artifactId>
     <packaging>bundle</packaging>
 
     <dependencies>
@@ -17,12 +17,8 @@
             <artifactId>commons-logging</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.datasources</groupId>
-            <artifactId>org.wso2.carbon.datasource.core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
+            <groupId>org.wso2.orbit.org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
@@ -37,35 +33,21 @@
             <artifactId>org.wso2.carbon.core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.orbit.org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.wso2.carbon.coordination</groupId>
             <artifactId>org.wso2.carbon.cluster.coordinator.commons</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <suiteXmlFiles>
+                        <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
+                    </suiteXmlFiles>
+                    <skipTests>true</skipTests>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.felix</groupId>
@@ -75,22 +57,15 @@
                     <instructions>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
-                        <Private-Package>
-                            org.wso2.carbon.cluster.coordinator.rdbms.internal.*,
-                            org.wso2.carbon.cluster.coordinator.rdbms.util.*,
-                        </Private-Package>
                         <Export-Package>
-                            !org.wso2.carbon.cluster.coordinator.rdbms.internal.*,
-                            !org.wso2.carbon.cluster.coordinator.rdbms.util.*,
-                            org.wso2.carbon.cluster.coordinator.rdbms.*;version="${carbon.coordination.exp.package.version}"
+                            org.wso2.carbon.cluster.coordinator.service.*;version="${carbon.coordination.exp.package.version}",
                         </Export-Package>
                         <Import-Package>
-                            org.wso2.carbon.cluster.coordinator.commons.*,
-                            com.google.common.*;version="${guava.imp.package.version}",
-                            org.apache.commons.logging.*;version="${commons.logging.imp.package.version}",
+                            org.wso2.carbon.cluster.coordinator.commons.*;version="${carbon.coordination.exp.package.version}",
+                            org.osgi.framework.*;version="[1.8.0, 2.0.0)",
+                            org.wso2.carbon.kernel;version="[5.0.0, 6.0.0)",
                             *;resolution:=optional
                         </Import-Package>
-                        <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>
                 </configuration>
             </plugin>

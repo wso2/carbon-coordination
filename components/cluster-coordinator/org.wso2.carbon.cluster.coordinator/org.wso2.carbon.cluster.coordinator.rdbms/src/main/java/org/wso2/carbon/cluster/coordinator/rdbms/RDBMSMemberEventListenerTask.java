@@ -31,17 +31,21 @@ import java.util.List;
 class RDBMSMemberEventListenerTask implements Runnable {
 
     /**
-     * Class logger.
+     * Class log.
      */
-    private static final Log logger = LogFactory.getLog(RDBMSMemberEventListenerTask.class);
+    private static final Log log = LogFactory.getLog(RDBMSMemberEventListenerTask.class);
+
     /**
      * Node id of the node for which the reader reads member changes.
      */
-    public String nodeID;
+
+    private String nodeID;
+
     /**
      * Communication bus object to communicate with the database for the context store.
      */
     private RDBMSCommunicationBusContextImpl communicationBusContext;
+
     /**
      * List used to hold all the registered subscribers.
      */
@@ -62,31 +66,28 @@ class RDBMSMemberEventListenerTask implements Runnable {
             if (!membershipEvents.isEmpty()) {
                 for (MemberEvent event : membershipEvents) {
                     switch (event.getMembershipEventType()) {
-                    case MEMBER_ADDED:
-                        //todo pass nodedetail object
-                        notifyMemberAdditionEvent(event.getTargetNodeId(),
-                                event.getTargetGroupId());
-                        break;
-                    case MEMBER_REMOVED:
-                        notifyMemberRemovalEvent(event.getTargetNodeId(), event.getTargetGroupId());
-                        break;
-                    case COORDINATOR_CHANGED:
-                        notifyCoordinatorChangeEvent(event.getTargetNodeId(),
-                                event.getTargetGroupId());
-                        break;
-                    default:
-                        logger.error(
-                                "Unknown cluster event type: " + event.getMembershipEventType());
-                        break;
-                    }
+                        case MEMBER_ADDED:
+                            //todo pass nodedetail object
+                            notifyMemberAdditionEvent(event.getTargetNodeId(), event.getTargetGroupId());
+                            break;
+                        case MEMBER_REMOVED:
+                            notifyMemberRemovalEvent(event.getTargetNodeId(), event.getTargetGroupId());
+                            break;
+                        case COORDINATOR_CHANGED:
+                            notifyCoordinatorChangeEvent(event.getTargetNodeId(), event.getTargetGroupId());
+                            break;
+                        default:
+                            log.error("Unknown cluster event type: " + event.getMembershipEventType());
+                            break;
+                        }
                 }
             } else {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("No membership events to sync");
+                if (log.isDebugEnabled()) {
+                    log.debug("No membership events to sync");
                 }
             }
         } catch (Throwable e) {
-            logger.warn("Error occurred while reading membership events.", e);
+            log.warn("Error occurred while reading membership events. ", e);
         }
     }
 
@@ -114,8 +115,7 @@ class RDBMSMemberEventListenerTask implements Runnable {
     private void notifyMemberRemovalEvent(String member, String groupId) {
         for (MemberEventListener listener : listeners) {
             if (listener.getGroupId().equals(groupId)) {
-                NodeDetail nodeDetail = communicationBusContext
-                        .getRemovedNodeData(nodeID, groupId, member);
+                NodeDetail nodeDetail = communicationBusContext.getRemovedNodeData(nodeID, groupId, member);
                 if (nodeDetail != null) {
                     listener.memberRemoved(nodeDetail);
                 }
@@ -141,7 +141,7 @@ class RDBMSMemberEventListenerTask implements Runnable {
 
     /**
      * Method to read membership events.
-     * <p>This will read all membership events that a are recorded for a particular node and clear all of those once
+     * <p>This will read all membership events that are recorded for a particular node and clear all of those once
      * read.
      *
      * @return list membership events

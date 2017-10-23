@@ -6,15 +6,16 @@
         <version>2.0.6-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>org.wso2.carbon.cluster.coordinator.zookeeper.feature</artifactId>
+    <artifactId>org.wso2.carbon.cluster.coordinator.service.feature</artifactId>
     <packaging>carbon-feature</packaging>
-    <name>WSO2-cluster-coordinator-zookeeper-feature</name>
+    <name>WSO2-cluster-coordinator-commons-feature</name>
 
     <dependencies>
         <dependency>
             <groupId>org.wso2.carbon.coordination</groupId>
-            <artifactId>org.wso2.carbon.cluster.coordinator.zookeeper</artifactId>
+            <artifactId>org.wso2.carbon.cluster.coordinator.service</artifactId>
         </dependency>
     </dependencies>
 
@@ -34,7 +35,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.wso2.carbon.coordination</groupId>
-                                    <artifactId>org.wso2.carbon.cluster.coordinator.zookeeper</artifactId>
+                                    <artifactId>org.wso2.carbon.cluster.coordinator.service</artifactId>
                                     <version>${project.parent.version}</version>
                                     <type>bundle</type>
                                     <overWrite>true</overWrite>
@@ -74,7 +75,7 @@
                             </adviceFileContents>
                             <bundles>
                                 <bundle>
-                                    <symbolicName>org.wso2.carbon.cluster.coordinator.zookeeper</symbolicName>
+                                    <symbolicName>org.wso2.carbon.cluster.coordinator.service</symbolicName>
                                     <version>${project.parent.version}</version>
                                 </bundle>
                             </bundles>
@@ -84,5 +85,6 @@
             </plugin>
         </plugins>
     </build>
+
 
 </project>

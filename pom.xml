@@ -20,20 +20,20 @@
     <parent>
         <groupId>org.wso2</groupId>
         <artifactId>wso2</artifactId>
-        <version>1</version>
+        <version>5</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.carbon.coordination</groupId>
-    <artifactId>org.wso2.carbon.cluster.coordinator.parent</artifactId>
+    <artifactId>carbon-coordination</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>2.0.6-SNAPSHOT</version>
     <name>WSO2 Carbon Coordination - Parent</name>
 
     <modules>
         <module>components/cluster-coordinator</module>
         <module>features/cluster-coordinator</module>
-     </modules>
+    </modules>
 
     <scm>
         <url>https://github.com/wso2/carbon-coordination.git</url>
@@ -65,69 +65,6 @@
                         <target>1.8</target>
                     </configuration>
                 </plugin>
-                <plugin>
-                    <groupId>org.apache.felix</groupId>
-                    <artifactId>maven-scr-plugin</artifactId>
-                    <version>${maven.scr.version}</version>
-                    <executions>
-                        <execution>
-                            <id>generate-scr-scrdescriptor</id>
-                            <goals>
-                                <goal>scr</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin><!-- Overridden from parent pom to exclude generated sources -->
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>findbugs-maven-plugin</artifactId>
-                    <configuration>
-                        <effort>Max</effort>
-                        <threshold>Low</threshold>
-                        <xmlOutput>true</xmlOutput>
-                        <findbugsXmlOutputDirectory>${project.build.directory}/findbugs
-                        </findbugsXmlOutputDirectory>
-                        <excludeFilterFile>${maven.findbugsplugin.version.exclude}</excludeFilterFile>
-                        <!--Exclude generated sources-->
-                    </configuration>
-                    <version>${maven.findbugsplugin.version}</version>
-                    <executions>
-                        <execution>
-                            <id>analyze-compile</id>
-                            <phase>compile</phase>
-                            <goals>
-                                <goal>check</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin><!-- Overridden from parent pom to exclude generated sources -->
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-checkstyle-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <id>validate</id>
-                            <phase>validate</phase>
-                            <configuration>
-                                <configLocation>
-                                    https://raw.githubusercontent.com/wso2/code-quality-tools/master/checkstyle/checkstyle.xml
-                                </configLocation>
-                                <suppressionsLocation>
-                                    https://raw.githubusercontent.com/wso2/code-quality-tools/master/checkstyle/suppressions.xml
-                                </suppressionsLocation>
-                                <encoding>UTF-8</encoding>
-                                <consoleOutput>true</consoleOutput>
-                                <failsOnError>true</failsOnError>
-                                <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                                <!--Exclude generated sources-->
-                                <excludes>**/parser/*</excludes>
-                            </configuration>
-                            <goals>
-                                <goal>check</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
                 <!-- ANTLR Plugin -->
                 <plugin>
                     <groupId>org.antlr</groupId>
@@ -150,20 +87,54 @@
         </pluginManagement>
 
         <plugins>
-
-            <!-- Disabling the Maven checkstyle and FindBugs plugins till the code could be fully migrated -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <!-- <inherited>false</inherited> -->
                 <configuration>
-                    <skip>true</skip>
+                    <environmentVariables>
+                        <testEnvironmentVariable>EnvironmentVariable</testEnvironmentVariable>
+                    </environmentVariables>
+                    <suiteXmlFiles>
+                        <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
+                    </suiteXmlFiles>
+                    <argLine>${surefireArgLine} -ea -Xmx512m</argLine>
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.7.8</version>
+                <executions>
+                    <execution>
+                        <id>jacoco-initialize</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <configuration>
+                            <destFile>${basedir}/target/coverage-reports/jacoco.exec</destFile>
+                            <propertyName>surefireArgLine</propertyName>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>jacoco-site</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>${basedir}/target/coverage-reports/jacoco.exec</dataFile>
+                            <outputDirectory>${basedir}/target/coverage-reports/</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <skip>true</skip>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -177,19 +148,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <!-- <inherited>false</inherited> -->
-                <configuration>
-                    <environmentVariables>
-                        <testEnvironmentVariable>EnvironmentVariable</testEnvironmentVariable>
-                    </environmentVariables>
-                    <suiteXmlFiles>
-                        <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
-                    </suiteXmlFiles>
-                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -222,18 +180,13 @@
                 <version>${org.snakeyaml.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.wso2.carbon.datasources</groupId>
+                <artifactId>org.wso2.carbon.datasource.core</artifactId>
+                <version>${carbon.datasources.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wso2.carbon</groupId>
                 <artifactId>org.wso2.carbon.core</artifactId>
-                <version>${carbon.kernel.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wso2.carbon</groupId>
-                <artifactId>org.wso2.carbon.utils</artifactId>
-                <version>${carbon.kernel.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wso2.carbon</groupId>
-                <artifactId>org.wso2.carbon.ndatasource.core</artifactId>
                 <version>${carbon.kernel.version}</version>
             </dependency>
             <dependency>
@@ -261,10 +214,40 @@
                 <artifactId>curator-recipes</artifactId>
                 <version>${curator.recipies.version}</version>
             </dependency>
+
+            <!-- OSGi Dependencies-->
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.core</artifactId>
+                <version>${osgi.api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.eclipse.osgi</groupId>
+                <artifactId>org.eclipse.osgi</artifactId>
+                <version>${equinox.osgi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.eclipse.osgi</groupId>
+                <artifactId>org.eclipse.osgi.services</artifactId>
+                <version>${equinox.osgi.services.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jacoco</groupId>
+                <artifactId>org.jacoco.agent</artifactId>
+                <classifier>runtime</classifier>
+                <version>${jacoco.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>${com.h2database.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${mysql.connector.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -277,8 +260,10 @@
     </dependencyManagement>
 
     <properties>
-        <carbon.coordination.version>1.0.1-SNAPSHOT</carbon.coordination.version>
-        <carbon.coordination.exp.package.version>${carbon.coordination.version}</carbon.coordination.exp.package.version>
+        <carbon.coordination.version>2.0.6-SNAPSHOT</carbon.coordination.version>
+        <carbon.coordination.exp.package.version>${carbon.coordination.version}
+        </carbon.coordination.exp.package.version>
+        <jacoco.version>0.7.9</jacoco.version>
 
         <curator.framework.version>2.6.0</curator.framework.version>
         <apache.zookeeper.version>3.4.6</apache.zookeeper.version>
@@ -286,20 +271,35 @@
         <curator.recipies.version>2.6.0</curator.recipies.version>
         <org.snakeyaml.version>1.16.0.wso2v1</org.snakeyaml.version>
 
+        <!-- OSGI -->
+        <osgi.api.version>6.0.0</osgi.api.version>
+        <equinox.osgi.version>3.11.0.v20160603-1336</equinox.osgi.version>
+        <equinox.osgi.services.version>3.4.0.v20140312-2051</equinox.osgi.services.version>
+        <osgi.framework.import.version.range>[1.8.0, 2.0.0)</osgi.framework.import.version.range>
+        <osgi.service.tracker.import.version.range>[1.5.1, 2.0.0)</osgi.service.tracker.import.version.range>
+
+        <maven.scr.version>1.21.0</maven.scr.version>
         <carbon.feature.plugin.version>3.0.0</carbon.feature.plugin.version>
-        <maven.scr.version>1.7.2</maven.scr.version>
+        <maven.findbugsplugin.version.exclude>findbugs-exclude.xml</maven.findbugsplugin.version.exclude>
         <maven.checkstyleplugin.version>2.17</maven.checkstyleplugin.version>
         <maven.compiler.plugin.version>3.5.1</maven.compiler.plugin.version>
         <maven.findbugsplugin.version>3.0.3</maven.findbugsplugin.version>
-        <maven.findbugsplugin.version.exclude>findbugs-exclude.xml</maven.findbugsplugin.version.exclude>
 
-        <carbon.kernel.version>4.4.16</carbon.kernel.version>
+        <carbon.kernel.version>5.2.0</carbon.kernel.version>
+        <carbon.datasources.version>1.1.2</carbon.datasources.version>
         <commons.logging.version>1.2</commons.logging.version>
         <commons.logging.imp.package.version>[1.2,2.0)</commons.logging.imp.package.version>
-        <guava.version>19.0</guava.version>
-        <guava.imp.package.version>[19.0,20.0)</guava.imp.package.version>
+        <guava.version>20.0</guava.version>
+        <guava.bundle.version>20.0.0</guava.bundle.version>
+        <guava.imp.package.version>[20.0.0,21.0.0)</guava.imp.package.version>
+        <apache.curator.imp.package.version>[2.6.0,2.9.0)</apache.curator.imp.package.version>
         <com.h2database.version>1.4.187</com.h2database.version>
         <org.testing.version>6.9.10</org.testing.version>
+
+        <mysql.connector.version>5.1.38</mysql.connector.version>
+        <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
+        <carbon.feature.plugin.version>3.1.0</carbon.feature.plugin.version>
+        <java.version>1.8</java.version>
 
     </properties>
 

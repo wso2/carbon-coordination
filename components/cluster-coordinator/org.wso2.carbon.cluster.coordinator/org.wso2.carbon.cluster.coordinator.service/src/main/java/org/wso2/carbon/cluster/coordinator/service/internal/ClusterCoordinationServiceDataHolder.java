@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package org.wso2.carbon.cluster.coordinator.commons.internal;
+package org.wso2.carbon.cluster.coordinator.service.internal;
 
 import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
 
@@ -23,35 +23,16 @@ import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
 public class ClusterCoordinationServiceDataHolder {
 
     /**
-     * Singleton instance field
-     */
-    private static final ClusterCoordinationServiceDataHolder instance = new ClusterCoordinationServiceDataHolder();
-
-    /**
      * Coordination strategy implementation available in the OSGI environment
      */
-    private CoordinationStrategy coordinationStrategy;
+    private static CoordinationStrategy coordinationStrategy;
 
-    /**
-     * Get the singleton instance of the class
-     *
-     * @return Singleton instance
-     */
-    public static ClusterCoordinationServiceDataHolder getInstance() {
-        return instance;
-    }
-
-    /**
-     * Getter for coordinationStrategy
-     */
-    CoordinationStrategy getCoordinationStrategy() {
+    public static CoordinationStrategy getCoordinationStrategy() {
         return coordinationStrategy;
     }
 
-    /**
-     * Setter for coordinationStrategy
-     */
-    void setStrategy(CoordinationStrategy strategy) {
-        coordinationStrategy = strategy;
+    public static void setCoordinationStrategy(CoordinationStrategy strategy) {
+        ClusterCoordinationServiceDataHolder.coordinationStrategy = strategy;
     }
+
 }

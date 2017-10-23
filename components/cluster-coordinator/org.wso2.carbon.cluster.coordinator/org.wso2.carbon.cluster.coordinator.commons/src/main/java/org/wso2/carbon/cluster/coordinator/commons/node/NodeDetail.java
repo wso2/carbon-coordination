@@ -26,22 +26,27 @@ public class NodeDetail {
      * Node ID of the belonging node.
      */
     private final String nodeId;
+
     /**
      * Group ID of the belonging node.
      */
     private final String groupId;
+
     /**
      * The last updated heartbeat value.
      */
     private final long lastHeartbeat;
+
     /**
      * Indicate if the node addition is already identified by the coordinator.
      */
     private final boolean isNewNode;
+
     /**
      * The property map of the current node.
      */
     private Map<String, Object> propertiesMap;
+
     /**
      * Indicate if the node is the coordinator node.
      */
@@ -53,10 +58,12 @@ public class NodeDetail {
      * @param nodeId        node ID
      * @param groupId       cluster agent's socket address
      * @param lastHeartbeat last heartbeat received from the node
+     * @param isCoordinator check if this node is the coordinator
+     * @param propertiesMap the map of properties
      * @param isNewNode     true if new node
      */
-    public NodeDetail(String nodeId, String groupId, boolean isCoordinator, long lastHeartbeat,
-            boolean isNewNode, Map<String, Object> propertiesMap) {
+    public NodeDetail(String nodeId, String groupId, boolean isCoordinator, long lastHeartbeat, boolean isNewNode,
+                      Map<String, Object> propertiesMap) {
         this.nodeId = nodeId;
         this.lastHeartbeat = lastHeartbeat;
         this.isNewNode = isNewNode;
@@ -64,6 +71,24 @@ public class NodeDetail {
         this.propertiesMap = propertiesMap;
         this.isCoordinator = isCoordinator;
     }
+
+    /**
+     *
+     * @param nodeId        node ID
+     * @param groupId       cluster agent's socket address
+     * @param lastHeartbeat last heartbeat received from the node
+     * @param isCoordinator check if this node is the coordinator
+     * @param isNewNode     true if new node
+     */
+    public NodeDetail(String nodeId, String groupId, boolean isCoordinator, long lastHeartbeat, boolean isNewNode) {
+        this.nodeId = nodeId;
+        this.lastHeartbeat = lastHeartbeat;
+        this.isNewNode = isNewNode;
+        this.groupId = groupId;
+        this.isCoordinator = isCoordinator;
+        this.propertiesMap = null;
+    }
+
 
     /**
      * Getter method for Node ID.
@@ -115,7 +140,7 @@ public class NodeDetail {
      *
      * @return property map
      */
-    public Map<String, Object> getpropertiesMap() {
+    public Map<String, Object> getPropertiesMap() {
         return propertiesMap;
     }
 }
