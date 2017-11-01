@@ -188,5 +188,5 @@ cluster.config:
   coordinationStrategyClass: org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy
   strategyConfig:
     heartbeatInterval: 1000
-    heartbeatMaxAge: 2
+    heartbeatMaxRetry: 2
     eventPollingInterval: 1000

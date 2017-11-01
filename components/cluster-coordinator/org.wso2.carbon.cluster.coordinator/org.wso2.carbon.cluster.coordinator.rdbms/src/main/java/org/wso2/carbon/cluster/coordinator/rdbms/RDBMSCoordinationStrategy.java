@@ -57,7 +57,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
     /**
      * After this much of time the node is assumed to have left the cluster.
      */
-    private final int heartbeatMaxAge;
+    private final int heartbeatMaxRetry;
 
     /**
      * Thread executor used to run the coordination algorithm.
@@ -120,8 +120,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                         getOrDefault(RDBMSConstants.HEART_BEAT_INTERVAL, 1000);
                 // Maximum age of a heartbeat. After this much of time, the heartbeat is considered invalid and node is
                 // considered to have left the cluster.
-                this.heartbeatMaxAge = heartBeatInterval *
-                        (int) strategyConfiguration.getOrDefault(RDBMSConstants.HEART_BEAT_MAX_AGE, 2);
+                this.heartbeatMaxRetry = heartBeatInterval *
+                        (int) strategyConfiguration.getOrDefault(RDBMSConstants.HEART_BEAT_MAX_RETRY, 2);
                 this.localGroupId = (String) clusterConfiguration.get(CoordinationPropertyNames.GROUP_ID_PROPERTY);
             } else {
                 throw new ClusterCoordinationException("Strategy Configurations not found in" +
@@ -201,7 +201,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             long lastHeartBeat = nodeDetail.getLastHeartbeat();
             long currentTimeMillis = System.currentTimeMillis();
             long heartbeatAge = currentTimeMillis - lastHeartBeat;
-            isNodeExist = (heartbeatAge < heartbeatMaxAge);
+            isNodeExist = (heartbeatAge < heartbeatMaxRetry);
         }
 
         if (!isNodeExist) {
@@ -305,13 +305,13 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
          */
         private void performMemberTask() throws ClusterCoordinationException, InterruptedException {
             updateNodeHeartBeat();
-            boolean coordinatorValid = communicationBusContext.checkIfCoordinatorValid(localGroupId, heartbeatMaxAge);
+            boolean coordinatorValid = communicationBusContext.checkIfCoordinatorValid(localGroupId, heartbeatMaxRetry);
             if (!coordinatorValid) {
                 if (log.isDebugEnabled()) {
                     log.debug("Node ID :" + localNodeId
                             + " Going for election since the Coordinator is invalid for group ID: " + localGroupId);
                 }
-                communicationBusContext.removeCoordinator(localGroupId, heartbeatMaxAge);
+                communicationBusContext.removeCoordinator(localGroupId, heartbeatMaxRetry);
                 performElectionTask();
             }
         }
@@ -366,7 +366,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             for (NodeDetail nodeDetail : allNodeInformation) {
                 long heartbeatAge = currentTimeMillis - nodeDetail.getLastHeartbeat();
                 String nodeId = nodeDetail.getNodeId();
-                if (heartbeatAge >= heartbeatMaxAge) {
+                if (heartbeatAge >= heartbeatMaxRetry) {
                     removedNodes.add(nodeId);
                     allActiveNodeIds.remove(nodeId);
                     removedNodeDetails.add(nodeDetail);
