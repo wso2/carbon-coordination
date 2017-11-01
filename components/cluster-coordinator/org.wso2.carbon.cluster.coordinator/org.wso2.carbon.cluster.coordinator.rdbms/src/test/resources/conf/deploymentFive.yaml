@@ -189,5 +189,5 @@ cluster.config:
   strategyConfig:
     datasource: WSO2_CLUSTER_DB  # Datasource is not defined in yaml since test cases will internally create datasource
     heartbeatInterval:
-    heartbeatMaxAge:
+    heartbeatMaxRetry:
     eventPollingInterval:

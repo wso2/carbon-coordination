@@ -218,7 +218,7 @@ public class RDBMSConstants {
 
     public static final String EVENT_POLLING_INTERVAL = "eventPollingInterval";
 
-    public static final String HEART_BEAT_MAX_AGE = "heartbeatMaxAge";
+    public static final String HEART_BEAT_MAX_RETRY = "heartbeatMaxRetry";
 
     /**
      * Only public static constants are in this class. No need to instantiate.
