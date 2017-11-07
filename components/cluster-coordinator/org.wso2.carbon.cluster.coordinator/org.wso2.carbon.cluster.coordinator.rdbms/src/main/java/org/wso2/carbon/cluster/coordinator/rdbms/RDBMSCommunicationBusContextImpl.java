@@ -721,7 +721,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             String task = RDBMSConstants.TASK_GET_ALL_QUEUES;
             throw new ClusterCoordinationException("Error occurred while " + task, e);
         } catch (IOException | ClassNotFoundException e) {
-            throw new ClusterCoordinationException("Error retrieving the property map", e);
+            throw new ClusterCoordinationException("Error retrieving the node properties map from the result set "
+                    + "retrieved from the database: ", e);
         }
         return Collections.emptyMap();
     }
