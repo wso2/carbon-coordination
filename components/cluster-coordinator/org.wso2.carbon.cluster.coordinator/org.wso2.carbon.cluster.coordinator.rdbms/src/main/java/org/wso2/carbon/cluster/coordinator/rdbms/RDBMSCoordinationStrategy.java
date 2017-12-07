@@ -25,6 +25,7 @@ import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordination
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
 import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
+import org.wso2.carbon.cluster.coordinator.rdbms.util.LogEncoder;
 import org.wso2.carbon.cluster.coordinator.rdbms.util.RDBMSConstants;
 import org.wso2.carbon.config.ConfigurationException;
 import org.wso2.carbon.config.provider.ConfigProvider;
@@ -389,7 +390,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         private void notifyAddedMembers(List<String> newNodes, List<String> allActiveNodeIds) {
             for (String newNode : newNodes) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Member added " + newNode + "to group " + localGroupId);
+                    log.debug(LogEncoder.getEncodedString("Member added " + newNode + "to group " + localGroupId));
                 }
                 rdbmsMemberEventProcessor.notifyMembershipEvent(newNode, localGroupId, allActiveNodeIds,
                         MemberEventType.MEMBER_ADDED);
@@ -420,7 +421,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             storeRemovedMemberDetails(allActiveNodeIds, removedNodeDetails);
             for (String removedNode : removedNodes) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Member removed " + removedNode + "from group " + localGroupId);
+                    log.debug(LogEncoder.getEncodedString("Member removed " + removedNode + "from group "
+                            + localGroupId));
                 }
                 rdbmsMemberEventProcessor.notifyMembershipEvent(removedNode, localGroupId, allActiveNodeIds,
                         MemberEventType.MEMBER_REMOVED);
