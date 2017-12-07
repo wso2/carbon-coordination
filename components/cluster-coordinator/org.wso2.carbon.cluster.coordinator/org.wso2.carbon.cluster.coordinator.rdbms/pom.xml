@@ -92,6 +92,7 @@
                             org.wso2.carbon.cluster.coordinator.commons.*,
                             com.google.common.*;version="${guava.imp.package.version}",
                             org.apache.commons.logging.*;version="${commons.logging.imp.package.version}",
+                            org.wso2.orbit.org.owasp.encoder.*;version="0.0.0",
                             *;resolution:=optional
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
