@@ -237,6 +237,11 @@
                 <classifier>runtime</classifier>
                 <version>${jacoco.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.orbit.org.owasp.encoder</groupId>
+                <artifactId>encoder</artifactId>
+                <version>${owasp.encoder.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>com.h2database</groupId>
@@ -301,6 +306,8 @@
         <carbon.feature.plugin.version>3.1.0</carbon.feature.plugin.version>
         <java.version>1.8</java.version>
 
+        <owasp.encoder.version>1.2.0.wso2v2</owasp.encoder.version>
+        <owasp.encoder.version.range>[1.2.0, 1.3.0)</owasp.encoder.version.range>
     </properties>
 
 </project>
