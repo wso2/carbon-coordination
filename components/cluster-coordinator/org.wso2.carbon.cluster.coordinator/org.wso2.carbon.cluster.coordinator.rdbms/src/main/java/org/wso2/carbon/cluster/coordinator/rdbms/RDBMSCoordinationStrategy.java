@@ -390,7 +390,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         private void notifyAddedMembers(List<String> newNodes, List<String> allActiveNodeIds) {
             for (String newNode : newNodes) {
                 if (log.isDebugEnabled()) {
-                    log.debug(LogEncoder.getEncodedString("Member added " + newNode + "to group " + localGroupId));
+                    log.debug("Member added " + LogEncoder.getEncodedString(newNode) + "to group " +
+                            LogEncoder.getEncodedString(localGroupId));
                 }
                 rdbmsMemberEventProcessor.notifyMembershipEvent(newNode, localGroupId, allActiveNodeIds,
                         MemberEventType.MEMBER_ADDED);
@@ -421,8 +422,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             storeRemovedMemberDetails(allActiveNodeIds, removedNodeDetails);
             for (String removedNode : removedNodes) {
                 if (log.isDebugEnabled()) {
-                    log.debug(LogEncoder.getEncodedString("Member removed " + removedNode + "from group "
-                            + localGroupId));
+                    log.debug("Member removed " + LogEncoder.getEncodedString(removedNode) + "from group "
+                            + LogEncoder.getEncodedString(localGroupId));
                 }
                 rdbmsMemberEventProcessor.notifyMembershipEvent(removedNode, localGroupId, allActiveNodeIds,
                         MemberEventType.MEMBER_REMOVED);
