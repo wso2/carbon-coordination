@@ -26,6 +26,7 @@ import org.wso2.carbon.cluster.coordinator.commons.util.MemberEvent;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
 import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
 import org.wso2.carbon.cluster.coordinator.rdbms.util.LogEncoder;
+import org.wso2.carbon.cluster.coordinator.rdbms.util.LookAheadObjectInputStream;
 import org.wso2.carbon.cluster.coordinator.rdbms.util.RDBMSConstants;
 import org.wso2.carbon.datasource.core.api.DataSourceService;
 import org.wso2.carbon.datasource.core.exception.DataSourceException;
@@ -634,7 +635,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                     int blobLength = (int) resultSet.getBlob(3).length();
                     byte[] bytes = resultSet.getBlob(3).getBytes(1L, blobLength);
                     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-                    ObjectInputStream ois = new ObjectInputStream(bis);
+                    ObjectInputStream ois = new LookAheadObjectInputStream(bis);
                     Object blobObject = ois.readObject();
                     if (blobObject instanceof Map) {
                         propertiesMap = (Map) blobObject;
@@ -686,7 +687,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                     int blobLength = (int) blob.length();
                     byte[] bytes = blob.getBytes(1, blobLength);
                     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-                    ObjectInputStream ois = new ObjectInputStream(bis);
+                    ObjectInputStream ois = new LookAheadObjectInputStream(bis);
                     Object blobObject = ois.readObject();
                     if (blobObject instanceof Map) {
                         propertiesMap = (Map) blobObject;
@@ -789,7 +790,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                     int blobLength = (int) resultSet.getBlob(3).length();
                     byte[] bytes = resultSet.getBlob(3).getBytes(1L, blobLength);
                     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-                    ObjectInputStream ois = new ObjectInputStream(bis);
+                    ObjectInputStream ois = new LookAheadObjectInputStream(bis);
                     Object blobObject = ois.readObject();
                     if (blobObject instanceof Map) {
                         propertiesMap = (Map) blobObject;
