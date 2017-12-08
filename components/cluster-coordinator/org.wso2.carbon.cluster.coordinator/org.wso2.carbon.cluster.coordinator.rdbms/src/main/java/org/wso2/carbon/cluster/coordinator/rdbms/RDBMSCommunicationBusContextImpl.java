@@ -26,7 +26,6 @@ import org.wso2.carbon.cluster.coordinator.commons.util.MemberEvent;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
 import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
 import org.wso2.carbon.cluster.coordinator.rdbms.util.LogEncoder;
-import org.wso2.carbon.cluster.coordinator.rdbms.util.LookAheadObjectInputStream;
 import org.wso2.carbon.cluster.coordinator.rdbms.util.RDBMSConstants;
 import org.wso2.carbon.datasource.core.api.DataSourceService;
 import org.wso2.carbon.datasource.core.exception.DataSourceException;
@@ -34,8 +33,11 @@ import org.wso2.carbon.datasource.core.exception.DataSourceException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -635,7 +637,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                     int blobLength = (int) resultSet.getBlob(3).length();
                     byte[] bytes = resultSet.getBlob(3).getBytes(1L, blobLength);
                     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-                    ObjectInputStream ois = new LookAheadObjectInputStream(bis);
+                    ObjectInputStream ois = new RDBMSCommunicationBusContextImpl.LookAheadObjectInputStream(bis);
                     Object blobObject = ois.readObject();
                     if (blobObject instanceof Map) {
                         propertiesMap = (Map) blobObject;
@@ -687,7 +689,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                     int blobLength = (int) blob.length();
                     byte[] bytes = blob.getBytes(1, blobLength);
                     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-                    ObjectInputStream ois = new LookAheadObjectInputStream(bis);
+                    ObjectInputStream ois = new RDBMSCommunicationBusContextImpl.LookAheadObjectInputStream(bis);
                     Object blobObject = ois.readObject();
                     if (blobObject instanceof Map) {
                         propertiesMap = (Map) blobObject;
@@ -790,7 +792,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                     int blobLength = (int) resultSet.getBlob(3).length();
                     byte[] bytes = resultSet.getBlob(3).getBytes(1L, blobLength);
                     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-                    ObjectInputStream ois = new LookAheadObjectInputStream(bis);
+                    ObjectInputStream ois = new RDBMSCommunicationBusContextImpl.LookAheadObjectInputStream(bis);
                     Object blobObject = ois.readObject();
                     if (blobObject instanceof Map) {
                         propertiesMap = (Map) blobObject;
@@ -973,6 +975,27 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         } finally {
             close(clearMembershipEvents, task);
             close(connection, task);
+        }
+    }
+
+    private static class LookAheadObjectInputStream extends ObjectInputStream {
+
+        LookAheadObjectInputStream(InputStream inputStream) throws IOException {
+            super(inputStream);
+        }
+
+        @Override
+        protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException,
+                ClassNotFoundException {
+            try {
+                if (!(Class.forName(desc.getName()).newInstance() instanceof Map)) {
+                    throw new InvalidClassException("Unauthorized deserialization attempt ", desc.getName());
+                }
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw new InvalidClassException("Invalid class of type " + desc.getName() +
+                        " used for cluster properties. Use an instance of java.util.Map");
+            }
+            return super.resolveClass(desc);
         }
     }
 }
