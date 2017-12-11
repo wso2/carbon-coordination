@@ -637,10 +637,14 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                     int blobLength = (int) resultSet.getBlob(3).length();
                     byte[] bytes = resultSet.getBlob(3).getBytes(1L, blobLength);
                     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-                    ObjectInputStream ois = new RDBMSCommunicationBusContextImpl.LookAheadObjectInputStream(bis);
-                    Object blobObject = ois.readObject();
-                    if (blobObject instanceof Map) {
-                        propertiesMap = (Map) blobObject;
+                    try {
+                        ObjectInputStream ois = new RDBMSCommunicationBusContextImpl.LookAheadObjectInputStream(bis);
+                        Object blobObject = ois.readObject();
+                        if (blobObject instanceof Map) {
+                            propertiesMap = (Map) blobObject;
+                        }
+                    } catch (IOException e) {
+                        log.error("Error in retrieving properties map when getting details of cluster " + groupId);
                     }
                 }
                 long lastHeartbeat = resultSet.getLong(4);
@@ -653,7 +657,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         } catch (SQLException e) {
             String errMsg = RDBMSConstants.TASK_GET_ALL_QUEUES;
             throw new ClusterCoordinationException("Error occurred while " + errMsg, e);
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
             throw new ClusterCoordinationException("Error retrieving the property map. ", e);
         } finally {
             close(resultSet, RDBMSConstants.TASK_GET_ALL_QUEUES);
@@ -689,10 +693,14 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                     int blobLength = (int) blob.length();
                     byte[] bytes = blob.getBytes(1, blobLength);
                     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-                    ObjectInputStream ois = new RDBMSCommunicationBusContextImpl.LookAheadObjectInputStream(bis);
-                    Object blobObject = ois.readObject();
-                    if (blobObject instanceof Map) {
-                        propertiesMap = (Map) blobObject;
+                    try {
+                        ObjectInputStream ois = new RDBMSCommunicationBusContextImpl.LookAheadObjectInputStream(bis);
+                        Object blobObject = ois.readObject();
+                        if (blobObject instanceof Map) {
+                            propertiesMap = (Map) blobObject;
+                        }
+                    } catch (IOException e) {
+                        log.error("Error in retrieving properties map when getting details of cluster " + groupId);
                     }
                 }
                 nodeDetail = new NodeDetail(removedMemberId, groupId, false, 0, false,
@@ -709,8 +717,6 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             String errMsg = RDBMSConstants.TASK_GET_ALL_QUEUES;
             throw new ClusterCoordinationException("Error occurred while " + errMsg, e);
         } catch (ClassNotFoundException e) {
-            throw new ClusterCoordinationException("Error retrieving the removed node data. ", e);
-        } catch (IOException e) {
             throw new ClusterCoordinationException("Error retrieving the removed node data. ", e);
         } finally {
             close(resultSet, RDBMSConstants.TASK_GET_ALL_QUEUES);
@@ -792,10 +798,14 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                     int blobLength = (int) resultSet.getBlob(3).length();
                     byte[] bytes = resultSet.getBlob(3).getBytes(1L, blobLength);
                     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-                    ObjectInputStream ois = new RDBMSCommunicationBusContextImpl.LookAheadObjectInputStream(bis);
-                    Object blobObject = ois.readObject();
-                    if (blobObject instanceof Map) {
-                        propertiesMap = (Map) blobObject;
+                    try {
+                        ObjectInputStream ois = new RDBMSCommunicationBusContextImpl.LookAheadObjectInputStream(bis);
+                        Object blobObject = ois.readObject();
+                        if (blobObject instanceof Map) {
+                            propertiesMap = (Map) blobObject;
+                        }
+                    } catch (IOException e) {
+                        log.error("Error in retrieving properties map when getting details of cluster " + groupId);
                     }
                 }
                 long lastHeartbeat = resultSet.getLong(4);
@@ -807,8 +817,6 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         } catch (SQLException e) {
             String errMsg = RDBMSConstants.TASK_GET_ALL_QUEUES;
             throw new ClusterCoordinationException("Error occurred while " + errMsg, e);
-        } catch (IOException e) {
-            throw new ClusterCoordinationException("Error retrieving the node data ", e);
         } catch (ClassNotFoundException e) {
             throw new ClusterCoordinationException("Error retrieving the node data ", e);
         } finally {
