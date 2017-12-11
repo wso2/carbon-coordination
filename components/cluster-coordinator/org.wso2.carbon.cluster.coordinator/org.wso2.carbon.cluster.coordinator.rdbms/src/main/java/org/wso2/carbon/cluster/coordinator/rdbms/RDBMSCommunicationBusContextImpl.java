@@ -25,8 +25,8 @@ import org.wso2.carbon.cluster.coordinator.commons.util.CommunicationBusContext;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEvent;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
 import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
-import org.wso2.carbon.cluster.coordinator.rdbms.util.LogEncoder;
 import org.wso2.carbon.cluster.coordinator.rdbms.util.RDBMSConstants;
+import org.wso2.carbon.cluster.coordinator.rdbms.util.StringUtil;
 import org.wso2.carbon.datasource.core.api.DataSourceService;
 import org.wso2.carbon.datasource.core.exception.DataSourceException;
 
@@ -213,7 +213,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             storeMembershipEventPreparedStatement.executeBatch();
             connection.commit();
             if (log.isDebugEnabled()) {
-                log.debug(LogEncoder.getEncodedString(task) + " executed successfully");
+                log.debug(StringUtil.removeCRLFCharacters(task) + " executed successfully");
             }
         } catch (SQLException e) {
             rollback(connection, task);
@@ -240,13 +240,13 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                 if (resultSet.next()) {
                     coordinatorNodeId = resultSet.getString(1);
                     if (log.isDebugEnabled()) {
-                        log.debug("Coordinator node ID: " + LogEncoder.getEncodedString(coordinatorNodeId) +
-                                " for group : " + LogEncoder.getEncodedString(groupId));
+                        log.debug("Coordinator node ID: " + StringUtil.removeCRLFCharacters(coordinatorNodeId) +
+                                " for group : " + StringUtil.removeCRLFCharacters(groupId));
                     }
                 } else {
                     if (log.isDebugEnabled()) {
                         log.debug("No coordinator present in database for group "
-                                + LogEncoder.getEncodedString(groupId));
+                                + StringUtil.removeCRLFCharacters(groupId));
                     }
                     coordinatorNodeId = null;
                 }
@@ -286,7 +286,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                 connection.close();
             }
         } catch (SQLException e) {
-            log.error("Failed to close connection after " + LogEncoder.getEncodedString(task), e);
+            log.error("Failed to close connection after " + StringUtil.removeCRLFCharacters(task), e);
         }
     }
 
@@ -301,7 +301,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             try {
                 preparedStatement.close();
             } catch (SQLException e) {
-                log.error("Closing prepared statement failed after " + LogEncoder.getEncodedString(task), e);
+                log.error("Closing prepared statement failed after " + StringUtil.removeCRLFCharacters(task), e);
             }
         }
     }
@@ -317,7 +317,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             try {
                 connection.rollback();
             } catch (SQLException e) {
-                log.warn("Rollback failed on " + LogEncoder.getEncodedString(task), e);
+                log.warn("Rollback failed on " + StringUtil.removeCRLFCharacters(task), e);
             }
         }
     }
@@ -726,7 +726,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         }
         if (log.isDebugEnabled()) {
             log.debug(RDBMSConstants.TASK_GET_ALL_QUEUES + " of removed nodes in group "
-                    + LogEncoder.getEncodedString(groupId) + " executed successfully");
+                    + StringUtil.removeCRLFCharacters(groupId) + " executed successfully");
         }
         return nodeDetail;
     }
@@ -825,7 +825,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             close(connection, RDBMSConstants.TASK_GET_ALL_QUEUES);
         }
         if (log.isDebugEnabled()) {
-            log.debug("getting node data of node " + LogEncoder.getEncodedString(nodeId) + " executed successfully");
+            log.debug("getting node data of node " + StringUtil.removeCRLFCharacters(nodeId) +
+                    " executed successfully");
         }
         return nodeDetail;
     }
@@ -853,7 +854,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             connection.commit();
             if (log.isDebugEnabled()) {
                 log.debug(RDBMSConstants.TASK_REMOVE_NODE_HEARTBEAT + " of node "
-                        + LogEncoder.getEncodedString(nodeId) + " executed successfully");
+                        + StringUtil.removeCRLFCharacters(nodeId) + " executed successfully");
             }
         } catch (SQLException e) {
             rollback(connection, RDBMSConstants.TASK_REMOVE_NODE_HEARTBEAT);
@@ -895,7 +896,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             storeRemovedMembersPreparedStatement.executeBatch();
             connection.commit();
             if (log.isDebugEnabled()) {
-                log.debug(LogEncoder.getEncodedString(task) + " executed successfully");
+                log.debug(StringUtil.removeCRLFCharacters(task) + " executed successfully");
             }
         } catch (SQLException e) {
             rollback(connection, task);
@@ -924,8 +925,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             }
             connection.commit();
             if (log.isDebugEnabled()) {
-                log.debug(RDBMSConstants.TASK_MARK_NODE_NOT_NEW + " of node " + LogEncoder.getEncodedString(nodeId) +
-                        " executed successfully");
+                log.debug(RDBMSConstants.TASK_MARK_NODE_NOT_NEW + " of node "
+                        + StringUtil.removeCRLFCharacters(nodeId) + " executed successfully");
             }
         } catch (SQLException e) {
             rollback(connection, RDBMSConstants.TASK_MARK_NODE_NOT_NEW);

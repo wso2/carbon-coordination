@@ -25,8 +25,8 @@ import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordination
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
 import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
-import org.wso2.carbon.cluster.coordinator.rdbms.util.LogEncoder;
 import org.wso2.carbon.cluster.coordinator.rdbms.util.RDBMSConstants;
+import org.wso2.carbon.cluster.coordinator.rdbms.util.StringUtil;
 import org.wso2.carbon.config.ConfigurationException;
 import org.wso2.carbon.config.provider.ConfigProvider;
 
@@ -390,8 +390,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         private void notifyAddedMembers(List<String> newNodes, List<String> allActiveNodeIds) {
             for (String newNode : newNodes) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Member added " + LogEncoder.getEncodedString(newNode) + "to group " +
-                            LogEncoder.getEncodedString(localGroupId));
+                    log.debug("Member added " + StringUtil.removeCRLFCharacters(newNode) + "to group " +
+                            StringUtil.removeCRLFCharacters(localGroupId));
                 }
                 rdbmsMemberEventProcessor.notifyMembershipEvent(newNode, localGroupId, allActiveNodeIds,
                         MemberEventType.MEMBER_ADDED);
@@ -422,8 +422,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             storeRemovedMemberDetails(allActiveNodeIds, removedNodeDetails);
             for (String removedNode : removedNodes) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Member removed " + LogEncoder.getEncodedString(removedNode) + "from group "
-                            + LogEncoder.getEncodedString(localGroupId));
+                    log.debug("Member removed " + StringUtil.removeCRLFCharacters(removedNode) + "from group "
+                            + StringUtil.removeCRLFCharacters(localGroupId));
                 }
                 rdbmsMemberEventProcessor.notifyMembershipEvent(removedNode, localGroupId, allActiveNodeIds,
                         MemberEventType.MEMBER_REMOVED);

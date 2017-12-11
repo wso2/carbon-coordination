@@ -41,10 +41,6 @@
             <artifactId>snakeyaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.orbit.org.owasp.encoder</groupId>
-            <artifactId>encoder</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>test</scope>
@@ -92,7 +88,6 @@
                             org.wso2.carbon.cluster.coordinator.commons.*,
                             com.google.common.*;version="${guava.imp.package.version}",
                             org.apache.commons.logging.*;version="${commons.logging.imp.package.version}",
-                            org.owasp.encoder.*;version="${owasp.encoder.version.range}",
                             *;resolution:=optional
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
