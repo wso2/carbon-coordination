@@ -644,7 +644,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                             propertiesMap = (Map) blobObject;
                         }
                     } catch (IOException e) {
-                        log.error("Error in retrieving properties map when getting details of cluster " + groupId);
+                        log.error("Error in retrieving properties map when getting details of cluster " + groupId, e);
                     }
                 }
                 long lastHeartbeat = resultSet.getLong(4);
@@ -700,7 +700,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                             propertiesMap = (Map) blobObject;
                         }
                     } catch (IOException e) {
-                        log.error("Error in retrieving properties map when getting details of cluster " + groupId);
+                        log.error("Error in retrieving properties map when getting details of cluster " + groupId, e);
                     }
                 }
                 nodeDetail = new NodeDetail(removedMemberId, groupId, false, 0, false,
@@ -805,7 +805,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                             propertiesMap = (Map) blobObject;
                         }
                     } catch (IOException e) {
-                        log.error("Error in retrieving properties map when getting details of cluster " + groupId);
+                        log.error("Error in retrieving properties map when getting details of cluster " + groupId, e);
                     }
                 }
                 long lastHeartbeat = resultSet.getLong(4);
@@ -997,12 +997,19 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException,
                 ClassNotFoundException {
             try {
-                if (!(Class.forName(desc.getName()).newInstance() instanceof Map)) {
+                if ((!(desc.getName().equals(String.class.getName()))) &&
+                        (!(desc.getName().equals(Integer.class.getName()))) &&
+                        (!(desc.getName().equals(Float.class.getName()))) &&
+                        (!(desc.getName().equals(Long.class.getName()))) &&
+                        (!(desc.getName().equals(Boolean.class.getName()))) &&
+                        (!(desc.getName().equals(Number.class.getName()))) &&
+                        (!(desc.getName().equals(CharSequence.class.getName()))) &&
+                !(Class.forName(desc.getName()).newInstance() instanceof Map)) {
                     throw new InvalidClassException("Unauthorized deserialization attempt ", desc.getName());
                 }
             } catch (InstantiationException | IllegalAccessException e) {
                 throw new InvalidClassException("Invalid class of type " + desc.getName() +
-                        " used for cluster properties. Use an instance of java.util.Map");
+                        " used for cluster properties.");
             }
             return super.resolveClass(desc);
         }
