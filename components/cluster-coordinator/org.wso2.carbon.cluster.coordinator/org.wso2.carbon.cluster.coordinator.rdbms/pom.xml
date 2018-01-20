@@ -55,6 +55,10 @@
             <artifactId>org.wso2.carbon.cluster.coordinator.commons</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wso2.carbon.analytics-common</groupId>
+            <artifactId>org.wso2.carbon.database.query.manager</artifactId>
+        </dependency>
+        <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <scope>test</scope>
@@ -88,6 +92,7 @@
                             org.wso2.carbon.cluster.coordinator.commons.*,
                             com.google.common.*;version="${guava.imp.package.version}",
                             org.apache.commons.logging.*;version="${commons.logging.imp.package.version}",
+                            org.wso2.carbon.database.query.manager.*; version="${carbon.analytics-common.version.range}",
                             *;resolution:=optional
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>

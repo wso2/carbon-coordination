@@ -24,8 +24,9 @@ import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyN
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
+import org.wso2.carbon.cluster.coordinator.rdbms.beans.ClusterCoordinatorConfigurations;
+import org.wso2.carbon.cluster.coordinator.rdbms.beans.StrategyConfig;
 import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
-import org.wso2.carbon.cluster.coordinator.rdbms.util.RDBMSConstants;
 import org.wso2.carbon.cluster.coordinator.rdbms.util.StringUtil;
 import org.wso2.carbon.config.ConfigurationException;
 import org.wso2.carbon.config.provider.ConfigProvider;
@@ -112,18 +113,16 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
 
     private RDBMSCoordinationStrategy(RDBMSCommunicationBusContextImpl communicationBusContext) {
 
-        Map<String, Object> clusterConfiguration = RDBMSCoordinationServiceHolder.getClusterConfiguration();
+        ClusterCoordinatorConfigurations clusterConfiguration = RDBMSCoordinationServiceHolder.
+                getClusterConfiguration();
         if (clusterConfiguration != null) {
-            Map<String, Object> strategyConfiguration = (Map<String, Object>) clusterConfiguration.
-                    get(CoordinationPropertyNames.STRATEGY_CONFIG_NS);
+            StrategyConfig strategyConfiguration = clusterConfiguration.getStrategyConfig();
             if (strategyConfiguration != null) {
-                this.heartBeatInterval = (int) strategyConfiguration.
-                        getOrDefault(RDBMSConstants.HEART_BEAT_INTERVAL, 1000);
+                this.heartBeatInterval = strategyConfiguration.getHeartbeatInterval();
                 // Maximum age of a heartbeat. After this much of time, the heartbeat is considered invalid and node is
                 // considered to have left the cluster.
-                this.heartbeatMaxRetry = heartBeatInterval *
-                        (int) strategyConfiguration.getOrDefault(RDBMSConstants.HEART_BEAT_MAX_RETRY, 2);
-                this.localGroupId = (String) clusterConfiguration.get(CoordinationPropertyNames.GROUP_ID_PROPERTY);
+                this.heartbeatMaxRetry = heartBeatInterval * strategyConfiguration.getHeartbeatMaxRetry();
+                this.localGroupId = clusterConfiguration.getGroupId();
             } else {
                 throw new ClusterCoordinationException("Strategy Configurations not found in" +
                         " deployment.yaml, please check " + CoordinationPropertyNames.STRATEGY_CONFIG_NS + " under "

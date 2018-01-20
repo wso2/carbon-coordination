@@ -23,7 +23,7 @@ import java.io.File;
 
 public class CoordinatorConfigEmptyValuesTestCase {
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expectedExceptions = RuntimeException.class)
     public void testEmptyValues() throws InterruptedException {
         RDBMSCoordinationStrategyUtil.init("conf" + File.separator + "deploymentFive.yaml", "dbFive");
         RDBMSCoordinationStrategy rdbmsCoordinationStrategyNodeOne = new RDBMSCoordinationStrategy(

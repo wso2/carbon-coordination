@@ -22,11 +22,10 @@ import org.wso2.carbon.cluster.coordinator.commons.MemberEventListener;
 import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
+import org.wso2.carbon.cluster.coordinator.rdbms.beans.StrategyConfig;
 import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
-import org.wso2.carbon.cluster.coordinator.rdbms.util.RDBMSConstants;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -70,12 +69,11 @@ public class RDBMSMemberEventProcessor {
      * @param nodeId the node ID of the node which starts the listening
      */
     private void addNewListenerTask(String nodeId) {
-        Map<String, Object> strategyConfiguration = (Map<String, Object>) RDBMSCoordinationServiceHolder.
-                getClusterConfiguration().get(CoordinationPropertyNames.STRATEGY_CONFIG_NS);
+        StrategyConfig strategyConfiguration = RDBMSCoordinationServiceHolder.getClusterConfiguration().
+                getStrategyConfig();
         int scheduledPeriod;
         if (strategyConfiguration != null) {
-            scheduledPeriod = (int) strategyConfiguration.
-                    getOrDefault(RDBMSConstants.EVENT_POLLING_INTERVAL, 1000);
+            scheduledPeriod = strategyConfiguration.getEventPollingInterval();
         } else {
             throw new ClusterCoordinationException("Cluster Configurations not found in" +
                     " deployment.yaml, please check " + CoordinationPropertyNames.CLUSTER_CONFIG_NS +

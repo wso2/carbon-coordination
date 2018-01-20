@@ -25,14 +25,11 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.cluster.coordinator.commons.CoordinationStrategy;
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
 import org.wso2.carbon.cluster.coordinator.rdbms.RDBMSCoordinationStrategy;
+import org.wso2.carbon.cluster.coordinator.rdbms.beans.ClusterCoordinatorConfigurations;
 import org.wso2.carbon.config.ConfigurationException;
 import org.wso2.carbon.config.provider.ConfigProvider;
 import org.wso2.carbon.datasource.core.api.DataSourceService;
-
-
-import java.util.Map;
 
 /**
  * RDBMS cluster coordinator data service.
@@ -54,10 +51,10 @@ public class RDBMSCoordinationServiceComponent {
     @Activate
     protected void start(BundleContext bundleContext) {
 
-        Map clusterConfiguration;
+        ClusterCoordinatorConfigurations clusterConfiguration;
         try {
-            clusterConfiguration = (Map) RDBMSCoordinationServiceHolder.getConfigProvider().
-                    getConfigurationObject(CoordinationPropertyNames.CLUSTER_CONFIG_NS);
+            clusterConfiguration = RDBMSCoordinationServiceHolder.getConfigProvider().
+                    getConfigurationObject(ClusterCoordinatorConfigurations.class);
             if (clusterConfiguration != null) {
                 RDBMSCoordinationServiceHolder.setClusterConfiguration(clusterConfiguration);
             } else {
@@ -74,15 +71,15 @@ public class RDBMSCoordinationServiceComponent {
             }
             return;
         }
-        if ((Boolean) clusterConfiguration.get(CoordinationPropertyNames.ENABLED_PROPERTY)) {
-            if (clusterConfiguration.get(CoordinationPropertyNames.COORDINATION_STRATEGY_CLASS_PROPERTY).
-                    equals(RDBMSCoordinationStrategy.class.getCanonicalName())) {
+        if (clusterConfiguration.isEnabled()) {
+            if (clusterConfiguration.getCoordinationStrategyClass().equals(RDBMSCoordinationStrategy.class.
+                    getCanonicalName())) {
 
                 bundleContext.registerService(CoordinationStrategy.class, new RDBMSCoordinationStrategy(), null);
                 log.info("RDBMS Coordination Service Component Activated");
             } else {
-                log.warn("No such coordination strategy service found: " +
-                        clusterConfiguration.get(CoordinationPropertyNames.COORDINATION_STRATEGY_CLASS_PROPERTY));
+                log.warn("No such coordination strategy service found: " + clusterConfiguration.
+                        getCoordinationStrategyClass());
             }
         } else {
             log.info("Cluster coordination has been disabled. Enable it in deployment.yaml " +
