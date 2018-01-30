@@ -92,10 +92,11 @@
                             org.wso2.carbon.cluster.coordinator.commons.*,
                             com.google.common.*;version="${guava.imp.package.version}",
                             org.apache.commons.logging.*;version="${commons.logging.imp.package.version}",
+                            org.wso2.carbon.config.*; version="${carbon.config.version.range}",
+                            org.wso2.carbon.datasource.core.*; version="${org.wso2.carbon.datasource.version.range}",
                             org.wso2.carbon.database.query.manager.*; version="${carbon.analytics-common.version.range}",
-                            *;resolution:=optional
+                            com.zaxxer.hikari.*; version="{hikari.version.range}"
                         </Import-Package>
-                        <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>
                 </configuration>
             </plugin>

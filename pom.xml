@@ -292,6 +292,9 @@
         </carbon.coordination.exp.package.version>
         <carbon.analytics-common.version>6.0.52</carbon.analytics-common.version>
         <carbon.analytics-common.version.range>[6.0.52, 6.1.0)</carbon.analytics-common.version.range>
+        <carbon.config.version.range>[2.1.5, 2.2.0)</carbon.config.version.range>
+        <org.wso2.carbon.datasource.version.range>[1.0.0, 2.0.0)</org.wso2.carbon.datasource.version.range>
+        <hikari.version.range>[2.6.1, 2.7.0)</hikari.version.range>
         <jacoco.version>0.7.9</jacoco.version>
 
         <curator.framework.version>2.6.0</curator.framework.version>
