@@ -18,8 +18,8 @@ package org.wso2.carbon.cluster.coordinator.rdbms.test;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.h2.jdbcx.JdbcDataSource;
-import org.wso2.carbon.cluster.coordinator.commons.configs.CoordinationPropertyNames;
 import org.wso2.carbon.cluster.coordinator.commons.exception.ClusterCoordinationException;
+import org.wso2.carbon.cluster.coordinator.rdbms.beans.ClusterCoordinatorConfigurations;
 import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
 import org.wso2.carbon.config.ConfigurationException;
 import org.wso2.carbon.config.provider.ConfigProvider;
@@ -33,7 +33,6 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Map;
 import javax.sql.DataSource;
 
 public class RDBMSCoordinationStrategyUtil {
@@ -86,8 +85,8 @@ public class RDBMSCoordinationStrategyUtil {
                 new SecureVaultImpl());
 
         try {
-            Map clusterConfig = (Map) configProvider.
-                    getConfigurationObject(CoordinationPropertyNames.CLUSTER_CONFIG_NS);
+            ClusterCoordinatorConfigurations clusterConfig = configProvider.getConfigurationObject(
+                    ClusterCoordinatorConfigurations.class);
             RDBMSCoordinationServiceHolder.setClusterConfiguration(clusterConfig);
         } catch (ConfigurationException e) {
             log.error("Configuration file " + deploymentFile + " not found in resources folder " + e);
@@ -100,10 +99,8 @@ public class RDBMSCoordinationStrategyUtil {
             h2DataSource.setUser("wso2carbon");
             h2DataSource.setPassword("wso2carbon");
             dataSource = h2DataSource;
-            createTables();
-            clearTables();
         } catch (ClassNotFoundException e) {
-            throw new ClusterCoordinationException("Error while initializing database", e);
+            throw new ClusterCoordinationException("Error while initializing database. Driver not found", e);
         }
     }
 

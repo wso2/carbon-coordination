@@ -24,9 +24,13 @@ import org.wso2.carbon.cluster.coordinator.commons.node.NodeDetail;
 import org.wso2.carbon.cluster.coordinator.commons.util.CommunicationBusContext;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEvent;
 import org.wso2.carbon.cluster.coordinator.commons.util.MemberEventType;
+import org.wso2.carbon.cluster.coordinator.rdbms.beans.StrategyConfig;
 import org.wso2.carbon.cluster.coordinator.rdbms.internal.RDBMSCoordinationServiceHolder;
+import org.wso2.carbon.cluster.coordinator.rdbms.query.QueryManager;
+import org.wso2.carbon.cluster.coordinator.rdbms.util.QueryConstants;
 import org.wso2.carbon.cluster.coordinator.rdbms.util.RDBMSConstants;
 import org.wso2.carbon.cluster.coordinator.rdbms.util.StringUtil;
+import org.wso2.carbon.database.query.manager.exception.QueryMappingNotAvailableException;
 import org.wso2.carbon.datasource.core.api.DataSourceService;
 import org.wso2.carbon.datasource.core.exception.DataSourceException;
 
@@ -40,14 +44,16 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.sql.Blob;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
-
+import javax.sql.rowset.serial.SerialBlob;
 
 /**
  * The RDBMS based communication bus layer for the nodes. This layer handles the database level calls.
@@ -58,21 +64,26 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
      * The log class
      */
     private static final Log log = LogFactory.getLog(RDBMSCommunicationBusContextImpl.class);
+    private static final String POSTGRESQL_DATABASE = "PostgreSQL";
+    private static final String MSSQL_DATABASE = "Microsoft SQL Server";
 
     /**
      * The datasource which is used to be connected to the database.
      */
     private DataSource datasource;
+    private QueryManager queryManager;
+    private String databaseType = null;
+    private String databaseVersion;
 
     public RDBMSCommunicationBusContextImpl() {
-        Map<String, Object> strategyConfiguration = (Map<String, Object>) RDBMSCoordinationServiceHolder.
-                getClusterConfiguration().get(CoordinationPropertyNames.STRATEGY_CONFIG_NS);
+        StrategyConfig strategyConfiguration = RDBMSCoordinationServiceHolder.getClusterConfiguration().
+                getStrategyConfig();
         if (strategyConfiguration == null) {
             throw new ClusterCoordinationException("Configurations under name space "
                     + CoordinationPropertyNames.STRATEGY_CONFIG_NS + " under "
                     + CoordinationPropertyNames.CLUSTER_CONFIG_NS + " not specified in deployment.yaml");
         }
-        String datasourceName = (String) strategyConfiguration.get(RDBMSConstants.RDBMS_COORDINATION_DS);
+        String datasourceName = strategyConfiguration.getDatasource();
         if (datasourceName == null) {
             throw new ClusterCoordinationException("No datasource specified to be used with RDBMS Coordination " +
                     "Strategy. Please check configurations under " + CoordinationPropertyNames.CLUSTER_CONFIG_NS);
@@ -86,6 +97,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         } catch (DataSourceException e) {
             throw new ClusterCoordinationException("Error in initializing the datasource " + datasourceName, e);
         }
+
         createTables();
     }
 
@@ -98,97 +110,88 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
      * Create the tables needed for RDBMS communication.
      */
     private void createTables() {
-        createLeaderStatusTable();
-        createClusterNodeStatusTable();
-        createMembershipEventTable();
-        createRemovedMembersTable();
-    }
 
-    /**
-     * Create Leader Status Table.
-     */
-    private void createLeaderStatusTable() {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
         try {
-            connection = getConnection();
-            preparedStatement = connection.prepareStatement(RDBMSConstants.CREATE_LEADER_STATUS_TABLE);
-            preparedStatement.execute();
-            connection.commit();
-            if (log.isDebugEnabled()) {
-                log.debug("Leader Status Table Created Successfully");
-            }
+            Connection connection = getConnection();
+            DatabaseMetaData metaData = connection.getMetaData();
+            databaseType = metaData.getDatabaseProductName();
+            databaseVersion = Integer.toString(metaData.getDatabaseMajorVersion());
+            queryManager = new QueryManager(databaseType, databaseVersion, RDBMSCoordinationServiceHolder.
+                    getClusterConfiguration());
         } catch (SQLException e) {
-            throw new ClusterCoordinationException("Error in executing create leader status table query.", e);
-        } finally {
-            close(preparedStatement, "Execute query");
-            close(connection, "Execute query");
+            throw new ClusterCoordinationException("Error in connecting to the datasource to create tables " +
+                    "for clustering", e);
+        } catch (IOException | QueryMappingNotAvailableException e) {
+            throw new ClusterCoordinationException("Error reading queries for database " + databaseType
+                    + " " + databaseVersion, e);
         }
+
+        createTableIfNotExist(Table.LEADER_STATUS_TABLE);
+        createTableIfNotExist(Table.CLUSTER_NODE_STATUS_TABLE);
+        createTableIfNotExist(Table.MEMBERSHIP_EVENT_TABLE);
+        createTableIfNotExist(Table.REMOVED_MEMBERS_TABLE);
     }
 
-    /**
-     * Create Cluster Node Status table.
-     */
-    private void createClusterNodeStatusTable() {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        try {
-            connection = getConnection();
-            preparedStatement = connection.prepareStatement(RDBMSConstants.CREATE_CLUSTER_NODE_STATUS_TABLE);
-            preparedStatement.execute();
-            connection.commit();
-            if (log.isDebugEnabled()) {
-                log.debug("Cluster Node Status Table Created Successfully");
-            }
-        } catch (SQLException e) {
-            throw new ClusterCoordinationException("Error in executing create cluster node status table query.", e);
-        } finally {
-            close(preparedStatement, "Execute query");
-            close(connection, "Execute query");
-        }
+    private enum Table {
+        LEADER_STATUS_TABLE, CLUSTER_NODE_STATUS_TABLE, MEMBERSHIP_EVENT_TABLE, REMOVED_MEMBERS_TABLE
     }
 
-    /**
-     * Create Membership Event Table.
-     */
-    private void createMembershipEventTable() {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
+    private void createTableIfNotExist(Table tableName) {
+        Statement stmt = null;
+        Connection con = null;
         try {
-            connection = getConnection();
-            preparedStatement = connection.prepareStatement(RDBMSConstants.CREATE_MEMBERSHIP_EVENT_TABLE);
-            preparedStatement.execute();
-            connection.commit();
-            if (log.isDebugEnabled()) {
-                log.debug("Membership Event Table Created Successfully");
+            try {
+                con = getConnection();
+                con.setAutoCommit(false);
+                stmt = con.createStatement();
+            } catch (SQLException e) {
+                log.error("Cannot establish connection to the database to create " + tableName + " if not exists", e);
+                return;
             }
-        } catch (SQLException e) {
-            throw new ClusterCoordinationException("Error in executing create membership event table query.", e);
-        } finally {
-            close(preparedStatement, "Execute query");
-            close(connection, "Execute query");
-        }
-    }
+            String isTableExistsQuery = null;
+            String createTableQuery = null;
+            switch (tableName) {
+                case LEADER_STATUS_TABLE:
+                    isTableExistsQuery = queryManager.getQuery(QueryConstants.IS_LEADER_STATUS_TABLE_EXISTS);
+                    createTableQuery = queryManager.getQuery(QueryConstants.CREATE_LEADER_STATUS_TABLE);
+                    break;
+                case CLUSTER_NODE_STATUS_TABLE:
+                    isTableExistsQuery = queryManager.getQuery(QueryConstants.IS_CLUSTER_NODE_STATUS_TABLE_EXISTS);
+                    createTableQuery = queryManager.getQuery(QueryConstants.CREATE_CLUSTER_NODE_STATUS_TABLE);
+                    break;
+                case MEMBERSHIP_EVENT_TABLE:
+                    isTableExistsQuery = queryManager.getQuery(QueryConstants.IS_MEMBERSHIP_EVENT_TABLE_EXISTS);
+                    createTableQuery = queryManager.getQuery(QueryConstants.CREATE_MEMBERSHIP_EVENT_TABLE);
+                    break;
+                case REMOVED_MEMBERS_TABLE:
+                    isTableExistsQuery = queryManager.getQuery(QueryConstants.IS_REMOVED_MEMBERS_TABLE_EXISTS);
+                    createTableQuery = queryManager.getQuery(QueryConstants.CREATE_REMOVED_MEMBERS_TABLE);
+                    break;
+            }
 
-    /**
-     * Create Removed Members Table.
-     */
-    private void createRemovedMembersTable() {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        try {
-            connection = getConnection();
-            preparedStatement = connection.prepareStatement(RDBMSConstants.CREATE_REMOVED_MEMBERS_TABLE);
-            preparedStatement.execute();
-            connection.commit();
-            if (log.isDebugEnabled()) {
-                log.debug("Removed Member Table Created Successfully");
+            try (ResultSet ignored = stmt.executeQuery(isTableExistsQuery)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Table " + tableName + " has already been created.");
+                }
+            } catch (SQLException e) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Table " + tableName + " does not Exist. Table Will be created. ");
+                }
+                close(stmt, "Checking table exists");
+                close(con, "Checking tables exists");
+                try {
+                    con = datasource.getConnection();
+                    stmt = con.createStatement();
+                    con.setAutoCommit(false);
+                    stmt.executeUpdate(createTableQuery);
+                    con.commit();
+                } catch (SQLException ex) {
+                    log.error("Could not create table " + tableName, ex);
+                }
             }
-        } catch (SQLException e) {
-            throw new ClusterCoordinationException("Error in executing create removed members table query.", e);
         } finally {
-            close(preparedStatement, "Execute query");
-            close(connection, "Execute query");
+            close(stmt, "Creating table " + tableName + " if not exists");
+            close(con, "Creating table " + tableName + " if not exists");
         }
     }
 
@@ -202,7 +205,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         try {
             connection = getConnection();
             storeMembershipEventPreparedStatement = connection
-                    .prepareStatement(RDBMSConstants.PS_INSERT_MEMBERSHIP_EVENT);
+                    .prepareStatement(queryManager.getQuery(QueryConstants.INSERT_MEMBERSHIP_EVENT));
             for (String clusterNode : clusterNodes) {
                 storeMembershipEventPreparedStatement.setString(1, clusterNode);
                 storeMembershipEventPreparedStatement.setString(2, groupId);
@@ -233,7 +236,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             ResultSet resultSet = null;
             try {
                 connection = getConnection();
-                preparedStatement = connection.prepareStatement(RDBMSConstants.PS_GET_COORDINATOR_NODE_ID);
+                preparedStatement = connection.prepareStatement(queryManager.getQuery(
+                        QueryConstants.GET_COORDINATOR_NODE_ID));
                 preparedStatement.setString(1, groupId);
                 resultSet = preparedStatement.executeQuery();
                 String coordinatorNodeId;
@@ -296,7 +300,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
      * @param preparedStatement The statement to be closed
      * @param task              The task which was running
      */
-    private void close(PreparedStatement preparedStatement, String task) {
+    private void close(Statement preparedStatement, String task) {
         if (preparedStatement != null) {
             try {
                 preparedStatement.close();
@@ -332,7 +336,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         String task = "retrieving membership events destined to: " + nodeID;
         try {
             connection = getConnection();
-            preparedStatement = connection.prepareStatement(RDBMSConstants.PS_SELECT_MEMBERSHIP_EVENT);
+            preparedStatement = connection.prepareStatement(queryManager.getQuery(
+                    QueryConstants.SELECT_MEMBERSHIP_EVENT));
             preparedStatement.setString(1, nodeID);
             resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
@@ -342,7 +347,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                         resultSet.getString(RDBMSConstants.GROUP_ID));
                 membershipEvents.add(membershipEvent);
             }
-            clearMembershipEvents = connection.prepareStatement(RDBMSConstants.PS_CLEAN_MEMBERSHIP_EVENTS_FOR_NODE);
+            clearMembershipEvents = connection.prepareStatement(queryManager.getQuery(
+                    QueryConstants.CLEAN_MEMBERSHIP_EVENTS_FOR_NODE));
             clearMembershipEvents.setString(1, nodeID);
             clearMembershipEvents.executeUpdate();
             connection.commit();
@@ -387,7 +393,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         String task = "Clearing all membership events";
         try {
             connection = getConnection();
-            clearMembershipEvents = connection.prepareStatement(RDBMSConstants.PS_CLEAR_ALL_MEMBERSHIP_EVENTS);
+            clearMembershipEvents = connection.prepareStatement(queryManager.getQuery(
+                    QueryConstants.CLEAR_ALL_MEMBERSHIP_EVENTS));
             clearMembershipEvents.executeUpdate();
             connection.commit();
             if (log.isDebugEnabled()) {
@@ -409,7 +416,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
 
         try {
             connection = getConnection();
-            preparedStatement = connection.prepareStatement(RDBMSConstants.PS_INSERT_COORDINATOR_ROW);
+            preparedStatement = connection.prepareStatement(queryManager.getQuery(
+                    QueryConstants.INSERT_COORDINATOR_ROW));
             preparedStatement.setString(1, groupId);
             preparedStatement.setString(2, nodeId);
             preparedStatement.setLong(3, System.currentTimeMillis());
@@ -436,7 +444,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         ResultSet resultSet = null;
         try {
             connection = getConnection();
-            preparedStatement = connection.prepareStatement(RDBMSConstants.PS_GET_COORDINATOR_ROW_FOR_NODE_ID);
+            preparedStatement = connection.prepareStatement(queryManager.getQuery(
+                    QueryConstants.GET_COORDINATOR_ROW_FOR_NODE_ID));
             preparedStatement.setString(1, nodeId);
             preparedStatement.setString(2, groupId);
             resultSet = preparedStatement.executeQuery();
@@ -465,7 +474,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         try {
             connection = getConnection();
             preparedStatementForCoordinatorUpdate = connection
-                    .prepareStatement(RDBMSConstants.PS_UPDATE_COORDINATOR_HEARTBEAT);
+                    .prepareStatement(queryManager.getQuery(QueryConstants.UPDATE_COORDINATOR_HEARTBEAT));
             preparedStatementForCoordinatorUpdate.setLong(1, System.currentTimeMillis());
             preparedStatementForCoordinatorUpdate.setString(2, nodeId);
             preparedStatementForCoordinatorUpdate.setString(3, groupId);
@@ -494,7 +503,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         ResultSet resultSet = null;
         try {
             connection = getConnection();
-            preparedStatement = connection.prepareStatement(RDBMSConstants.PS_GET_COORDINATOR_HEARTBEAT);
+            preparedStatement = connection.prepareStatement(queryManager.getQuery(
+                    QueryConstants.GET_COORDINATOR_HEARTBEAT));
             preparedStatement.setString(1, groupId);
             resultSet = preparedStatement.executeQuery();
             long currentTimeMillis = System.currentTimeMillis();
@@ -533,7 +543,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             connection = getConnection();
             long currentTimeMillis = System.currentTimeMillis();
             long thresholdTimeLimit = currentTimeMillis - heartbeatMaxAge;
-            preparedStatement = connection.prepareStatement(RDBMSConstants.PS_DELETE_COORDINATOR);
+            preparedStatement = connection.prepareStatement(queryManager.getQuery(QueryConstants.DELETE_COORDINATOR));
             preparedStatement.setString(1, groupId);
             preparedStatement.setLong(2, thresholdTimeLimit);
             preparedStatement.executeUpdate();
@@ -557,7 +567,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
 
         try {
             connection = getConnection();
-            preparedStatementForNodeUpdate = connection.prepareStatement(RDBMSConstants.PS_UPDATE_NODE_HEARTBEAT);
+            preparedStatementForNodeUpdate = connection.prepareStatement(queryManager.getQuery(
+                    QueryConstants.UPDATE_NODE_HEARTBEAT));
             preparedStatementForNodeUpdate.setLong(1, System.currentTimeMillis());
             preparedStatementForNodeUpdate.setString(2, nodeId);
             preparedStatementForNodeUpdate.setString(3, groupId);
@@ -588,11 +599,16 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
             objectOutputStream.writeObject(propertiesMap);
             byte[] propertiesMapAsBytes = byteArrayOutputStream.toByteArray();
-            preparedStatement = connection.prepareStatement(RDBMSConstants.PS_INSERT_NODE_HEARTBEAT_ROW);
+            preparedStatement = connection.prepareStatement(queryManager.getQuery(
+                    QueryConstants.INSERT_NODE_HEARTBEAT_ROW));
             preparedStatement.setString(1, nodeId);
             preparedStatement.setLong(2, System.currentTimeMillis());
             preparedStatement.setString(3, groupId);
-            preparedStatement.setBinaryStream(4, new ByteArrayInputStream(propertiesMapAsBytes));
+            if (databaseType.equals(POSTGRESQL_DATABASE)) {
+                preparedStatement.setBlob(4, new SerialBlob(propertiesMapAsBytes));
+            } else {
+                preparedStatement.setBinaryStream(4, new ByteArrayInputStream(propertiesMapAsBytes));
+            }
             preparedStatement.executeUpdate();
             connection.commit();
             if (log.isDebugEnabled()) {
@@ -601,7 +617,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         } catch (SQLException e) {
             rollback(connection, RDBMSConstants.TASK_CREATE_NODE_HEARTBEAT);
             throw new ClusterCoordinationException("Error occurred while " + RDBMSConstants.TASK_CREATE_NODE_HEARTBEAT
-                    + ". Node ID: " + nodeId + " group ID" + groupId, e);
+                    + ". Node ID: " + nodeId + " group ID " + groupId, e);
         } catch (IOException e) {
             throw new ClusterCoordinationException(e);
         } finally {
@@ -623,7 +639,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
 
         try {
             connection = getConnection();
-            preparedStatement = connection.prepareStatement(RDBMSConstants.PS_GET_ALL_NODE_HEARTBEAT);
+            preparedStatement = connection.prepareStatement(queryManager.getQuery(
+                    QueryConstants.GET_ALL_NODE_HEARTBEAT));
             preparedStatement.setString(1, groupId);
             resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
@@ -633,9 +650,15 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                     isCoordinatorNode = coordinatorNodeId.equals(nodeId);
                 }
                 Map<String, Object> propertiesMap = null;
-                if (resultSet.getBlob(3) != null) {
-                    int blobLength = (int) resultSet.getBlob(3).length();
-                    byte[] bytes = resultSet.getBlob(3).getBytes(1L, blobLength);
+                Blob blob;
+                if (databaseType.equals(MSSQL_DATABASE)) {
+                    blob = new SerialBlob(resultSet.getBytes(3));
+                } else {
+                    blob = resultSet.getBlob(3);
+                }
+                if (blob != null) {
+                    int blobLength = (int) blob.length();
+                    byte[] bytes = blob.getBytes(1L, blobLength);
                     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
                     try {
                         ObjectInputStream ois = new RDBMSCommunicationBusContextImpl.LookAheadObjectInputStream(bis);
@@ -680,7 +703,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         NodeDetail nodeDetail = null;
         try {
             connection = getConnection();
-            preparedStatement = connection.prepareStatement(RDBMSConstants.PS_SELECT_REMOVED_MEMBER_DETAILS);
+            preparedStatement = connection.prepareStatement(queryManager.getQuery(
+                    QueryConstants.SELECT_REMOVED_MEMBER_DETAILS));
             preparedStatement.setString(1, nodeId);
             preparedStatement.setString(2, removedMemberId);
             preparedStatement.setString(3, groupId);
@@ -688,7 +712,12 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             Map<String, Object> propertiesMap = null;
 
             if (resultSet.next()) {
-                Blob blob = resultSet.getBlob(2);
+                Blob blob;
+                if (databaseType.equals(MSSQL_DATABASE)) {
+                    blob = new SerialBlob(resultSet.getBytes(2));
+                } else {
+                    blob = resultSet.getBlob(2);
+                }
                 if (blob != null) {
                     int blobLength = (int) blob.length();
                     byte[] bytes = blob.getBytes(1, blobLength);
@@ -707,7 +736,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                         propertiesMap);
             }
             clearMembershipEvents = connection
-                    .prepareStatement(RDBMSConstants.PS_DELETE_REMOVED_MEMBER_DETAIL_FOR_NODE);
+                    .prepareStatement(queryManager.getQuery(QueryConstants.DELETE_REMOVED_MEMBER_DETAIL_FOR_NODE));
             clearMembershipEvents.setString(1, nodeId);
             clearMembershipEvents.setString(2, removedMemberId);
             clearMembershipEvents.setString(3, groupId);
@@ -743,8 +772,13 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
             objectOutputStream.writeObject(propertiesMap);
             byte[] propertiesMapAsBytes = byteArrayOutputStream.toByteArray();
-            preparedStatement = connection.prepareStatement(RDBMSConstants.PS_UPDATE_PROPERTIES_MAP);
-            preparedStatement.setBinaryStream(1, new ByteArrayInputStream(propertiesMapAsBytes));
+            preparedStatement = connection.prepareStatement(queryManager.getQuery(
+                    QueryConstants.UPDATE_PROPERTIES_MAP));
+            if (databaseType.equals(POSTGRESQL_DATABASE)) {
+                preparedStatement.setBlob(1, new SerialBlob(propertiesMapAsBytes));
+            } else {
+                preparedStatement.setBinaryStream(1, new ByteArrayInputStream(propertiesMapAsBytes));
+            }
             preparedStatement.setString(2, nodeId);
             preparedStatement.setString(3, groupId);
             preparedStatement.executeUpdate();
@@ -787,16 +821,22 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
 
         try {
             connection = getConnection();
-            preparedStatement = connection.prepareStatement(RDBMSConstants.PS_GET_NODE_DATA);
+            preparedStatement = connection.prepareStatement(queryManager.getQuery(QueryConstants.GET_NODE_DATA));
             preparedStatement.setString(1, groupId);
             preparedStatement.setString(2, nodeId);
             resultSet = preparedStatement.executeQuery();
             Map<String, Object> propertiesMap = null;
             if (resultSet.next()) {
                 boolean isCoordinatorNode = nodeId.equals(coordinatorNodeId);
-                if (resultSet.getBlob(3) != null) {
-                    int blobLength = (int) resultSet.getBlob(3).length();
-                    byte[] bytes = resultSet.getBlob(3).getBytes(1L, blobLength);
+                Blob blob;
+                if (databaseType.equals(MSSQL_DATABASE)) {
+                    blob = new SerialBlob(resultSet.getBytes(3));
+                } else {
+                    blob = resultSet.getBlob(3);
+                }
+                if (blob != null) {
+                    int blobLength = (int) blob.length();
+                    byte[] bytes = blob.getBytes(1L, blobLength);
                     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
                     try {
                         ObjectInputStream ois = new RDBMSCommunicationBusContextImpl.LookAheadObjectInputStream(bis);
@@ -847,7 +887,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         PreparedStatement preparedStatement = null;
         try {
             connection = getConnection();
-            preparedStatement = connection.prepareStatement(RDBMSConstants.PS_DELETE_NODE_HEARTBEAT);
+            preparedStatement = connection.prepareStatement(queryManager.getQuery(
+                    QueryConstants.DELETE_NODE_HEARTBEAT));
             preparedStatement.setString(1, nodeId);
             preparedStatement.setString(2, groupId);
             preparedStatement.executeUpdate();
@@ -875,7 +916,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         try {
             connection = getConnection();
             storeRemovedMembersPreparedStatement = connection
-                    .prepareStatement(RDBMSConstants.PS_INSERT_REMOVED_MEMBER_DETAILS);
+                    .prepareStatement(queryManager.getQuery(QueryConstants.INSERT_REMOVED_MEMBER_DETAILS));
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
             objectOutputStream.writeObject(removedPropertiesMap);
@@ -889,8 +930,12 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                 storeRemovedMembersPreparedStatement.setString(1, clusterNode);
                 storeRemovedMembersPreparedStatement.setString(2, groupId);
                 storeRemovedMembersPreparedStatement.setString(3, removedMember);
-                storeRemovedMembersPreparedStatement
-                        .setBinaryStream(4, new ByteArrayInputStream(propertiesMapAsBytes));
+                if (databaseType.equals(POSTGRESQL_DATABASE)) {
+                    storeRemovedMembersPreparedStatement.setBlob(4, new SerialBlob(propertiesMapAsBytes));
+                } else {
+                    storeRemovedMembersPreparedStatement.setBinaryStream(4,
+                            new ByteArrayInputStream(propertiesMapAsBytes));
+                }
                 storeRemovedMembersPreparedStatement.addBatch();
             }
             storeRemovedMembersPreparedStatement.executeBatch();
@@ -916,7 +961,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         PreparedStatement preparedStatement = null;
         try {
             connection = getConnection();
-            preparedStatement = connection.prepareStatement(RDBMSConstants.PS_MARK_NODE_NOT_NEW);
+            preparedStatement = connection.prepareStatement(queryManager.getQuery(QueryConstants.MARK_NODE_NOT_NEW));
             preparedStatement.setString(1, nodeId);
             preparedStatement.setString(2, groupId);
             int updateCount = preparedStatement.executeUpdate();
@@ -945,10 +990,12 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         String task = "Clearing all heartbeat data";
         try {
             connection = getConnection();
-            clearNodeHeartbeatData = connection.prepareStatement(RDBMSConstants.PS_CLEAR_NODE_HEARTBEATS);
+            clearNodeHeartbeatData = connection.prepareStatement(queryManager.getQuery(
+                    QueryConstants.CLEAR_NODE_HEARTBEATS));
             clearNodeHeartbeatData.executeUpdate();
 
-            clearCoordinatorHeartbeatData = connection.prepareStatement(RDBMSConstants.PS_CLEAR_COORDINATOR_HEARTBEAT);
+            clearCoordinatorHeartbeatData = connection.prepareStatement(queryManager.getQuery(
+                    QueryConstants.CLEAR_COORDINATOR_HEARTBEAT));
             clearCoordinatorHeartbeatData.executeUpdate();
             connection.commit();
             if (log.isDebugEnabled()) {
@@ -971,7 +1018,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         String task = "Clearing all membership events for node: " + nodeID;
         try {
             connection = getConnection();
-            clearMembershipEvents = connection.prepareStatement(RDBMSConstants.PS_CLEAN_MEMBERSHIP_EVENTS_FOR_NODE);
+            clearMembershipEvents = connection.prepareStatement(queryManager.getQuery(
+                    QueryConstants.CLEAN_MEMBERSHIP_EVENTS_FOR_NODE));
             clearMembershipEvents.setString(1, nodeID);
             clearMembershipEvents.executeUpdate();
             connection.commit();
@@ -1004,7 +1052,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                         (!(desc.getName().equals(Boolean.class.getName()))) &&
                         (!(desc.getName().equals(Number.class.getName()))) &&
                         (!(desc.getName().equals(CharSequence.class.getName()))) &&
-                !(Class.forName(desc.getName()).newInstance() instanceof Map)) {
+                        !(Class.forName(desc.getName()).newInstance() instanceof Map)) {
                     throw new InvalidClassException("Unauthorized deserialization attempt ", desc.getName());
                 }
             } catch (InstantiationException | IllegalAccessException e) {

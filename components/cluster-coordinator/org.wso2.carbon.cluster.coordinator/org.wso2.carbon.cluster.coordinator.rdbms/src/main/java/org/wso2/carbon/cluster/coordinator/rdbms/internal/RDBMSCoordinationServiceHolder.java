@@ -15,10 +15,9 @@
 
 package org.wso2.carbon.cluster.coordinator.rdbms.internal;
 
+import org.wso2.carbon.cluster.coordinator.rdbms.beans.ClusterCoordinatorConfigurations;
 import org.wso2.carbon.config.provider.ConfigProvider;
 import org.wso2.carbon.datasource.core.api.DataSourceService;
-
-import java.util.Map;
 
 /**
  * The service holder class for the cluster coordinator service.
@@ -29,7 +28,7 @@ public class RDBMSCoordinationServiceHolder {
 
     private static ConfigProvider configProvider;
 
-    private static Map<String, Object> clusterConfiguration;
+    private static ClusterCoordinatorConfigurations clusterConfiguration;
 
     public static DataSourceService getDataSourceService() {
         return dataSourceService;
@@ -47,11 +46,11 @@ public class RDBMSCoordinationServiceHolder {
         RDBMSCoordinationServiceHolder.configProvider = configProvider;
     }
 
-    public static Map<String, Object> getClusterConfiguration() {
+    public static ClusterCoordinatorConfigurations getClusterConfiguration() {
         return clusterConfiguration;
     }
 
-    public static void setClusterConfiguration(Map<String, Object> clusterConfiguration) {
+    public static void setClusterConfiguration(ClusterCoordinatorConfigurations clusterConfiguration) {
         RDBMSCoordinationServiceHolder.clusterConfiguration = clusterConfiguration;
     }
 }
