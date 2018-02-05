@@ -294,7 +294,7 @@
         <carbon.analytics-common.version.range>[6.0.52, 6.1.0)</carbon.analytics-common.version.range>
         <carbon.config.version.range>[2.1.5, 2.2.0)</carbon.config.version.range>
         <org.wso2.carbon.datasource.version.range>[1.0.0, 2.0.0)</org.wso2.carbon.datasource.version.range>
-        <hikari.version.range>[2.6.1, 2.7.0)</hikari.version.range>
+        <hikari.version.range>[2.4.1, 2.5.0)</hikari.version.range>
         <jacoco.version>0.7.9</jacoco.version>
 
         <curator.framework.version>2.6.0</curator.framework.version>
@@ -302,6 +302,7 @@
         <zookeeper.imp.package.version>[3.4,4.0)</zookeeper.imp.package.version>
         <curator.recipies.version>2.6.0</curator.recipies.version>
         <org.snakeyaml.version>1.16.0.wso2v1</org.snakeyaml.version>
+        <org.snakeyaml.version.range>[1.17, 2.0)</org.snakeyaml.version.range>
 
         <!-- OSGI -->
         <osgi.api.version>6.0.0</osgi.api.version>

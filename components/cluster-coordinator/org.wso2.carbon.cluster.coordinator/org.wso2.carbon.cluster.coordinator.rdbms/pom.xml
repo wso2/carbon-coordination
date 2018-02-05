@@ -95,7 +95,8 @@
                             org.wso2.carbon.config.*; version="${carbon.config.version.range}",
                             org.wso2.carbon.datasource.core.*; version="${org.wso2.carbon.datasource.version.range}",
                             org.wso2.carbon.database.query.manager.*; version="${carbon.analytics-common.version.range}",
-                            com.zaxxer.hikari.*; version="{hikari.version.range}"
+                            com.zaxxer.hikari.*; version="${hikari.version.range}",
+                            org.yaml.snakeyaml.*; version="${org.snakeyaml.version.range}"
                         </Import-Package>
                     </instructions>
                 </configuration>
