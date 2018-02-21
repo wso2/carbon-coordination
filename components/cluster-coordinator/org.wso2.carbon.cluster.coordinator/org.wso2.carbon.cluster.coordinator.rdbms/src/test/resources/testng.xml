@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 <suite name="rdbms" verbose="1" >
-    <test name="Coordination event flow rdbms" parallel="false">
+    <test name="Coordination event flow rdbms" parallel="false" preserve-order="true">
         <classes>
             <class name="org.wso2.carbon.cluster.coordinator.rdbms.test.CoordinatorConfigDefaultValuesTestCase"/>
             <class name="org.wso2.carbon.cluster.coordinator.rdbms.test.CoordinatorConfigDatasourceTestCase"/>

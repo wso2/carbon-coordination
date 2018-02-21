@@ -38,10 +38,10 @@ import javax.sql.DataSource;
 public class RDBMSCoordinationStrategyUtil {
 
     private static final Log log = LogFactory.getLog(RDBMSCoordinationStrategyUtil.class);
-    private static final String DROP_LEADER_STATUS_TABLE = "DROP TABLE LEADER_STATUS_TABLE;";
-    private static final String DROP_CLUSTER_NODE_STATUS_TABLE = "DROP TABLE CLUSTER_NODE_STATUS_TABLE;";
-    private static final String DROP_MEMBERSHIP_EVENT_TABLE = "DROP TABLE MEMBERSHIP_EVENT_TABLE;";
-    private static final String DROP_REMOVED_MEMBERS_TABLE = "DROP TABLE REMOVED_MEMBERS_TABLE;";
+    private static final String DROP_LEADER_STATUS_TABLE = "DROP TABLE LEADER_STATUS_TABLE IF EXISTS;";
+    private static final String DROP_CLUSTER_NODE_STATUS_TABLE = "DROP TABLE CLUSTER_NODE_STATUS_TABLE IF EXISTS;";
+    private static final String DROP_MEMBERSHIP_EVENT_TABLE = "DROP TABLE MEMBERSHIP_EVENT_TABLE IF EXISTS;";
+    private static final String DROP_REMOVED_MEMBERS_TABLE = "DROP TABLE REMOVED_MEMBERS_TABLE IF EXISTS;";
     private static final String CREATE_LEADER_STATUS_TABLE =
             "CREATE TABLE IF NOT EXISTS LEADER_STATUS_TABLE (\n"
                     + "                        GROUP_ID VARCHAR(512) NOT NULL,\n"
@@ -102,6 +102,7 @@ public class RDBMSCoordinationStrategyUtil {
         } catch (ClassNotFoundException e) {
             throw new ClusterCoordinationException("Error while initializing database. Driver not found", e);
         }
+        dropTables();
     }
 
     private static void clearTables() {
