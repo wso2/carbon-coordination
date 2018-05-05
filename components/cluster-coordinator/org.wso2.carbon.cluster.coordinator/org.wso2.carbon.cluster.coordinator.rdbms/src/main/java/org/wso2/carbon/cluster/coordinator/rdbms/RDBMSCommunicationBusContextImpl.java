@@ -111,8 +111,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
      */
     private void createTables() {
 
+        Connection connection = null;
         try {
-            Connection connection = getConnection();
+            connection = getConnection();
             DatabaseMetaData metaData = connection.getMetaData();
             databaseType = metaData.getDatabaseProductName();
             databaseVersion = Integer.toString(metaData.getDatabaseMajorVersion());
@@ -124,6 +125,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         } catch (IOException | QueryMappingNotAvailableException e) {
             throw new ClusterCoordinationException("Error reading queries for database " + databaseType
                     + " " + databaseVersion, e);
+        } finally {
+            close(connection, "Getting carbon coordination database information");
         }
 
         createTableIfNotExist(Table.LEADER_STATUS_TABLE);
