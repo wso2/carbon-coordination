@@ -111,8 +111,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
      */
     private void createTables() {
 
+        Connection connection = null;
         try {
-            Connection connection = getConnection();
+            connection = getConnection();
             DatabaseMetaData metaData = connection.getMetaData();
             databaseType = metaData.getDatabaseProductName();
             databaseVersion = Integer.toString(metaData.getDatabaseMajorVersion());
@@ -124,6 +125,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         } catch (IOException | QueryMappingNotAvailableException e) {
             throw new ClusterCoordinationException("Error reading queries for database " + databaseType
                     + " " + databaseVersion, e);
+        } finally {
+            close(connection, "Getting carbon coordination database information");
         }
 
         createTableIfNotExist(Table.LEADER_STATUS_TABLE);
@@ -145,8 +148,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                 con.setAutoCommit(false);
                 stmt = con.createStatement();
             } catch (SQLException e) {
-                log.error("Cannot establish connection to the database to create " + tableName + " if not exists", e);
-                return;
+                throw new ClusterCoordinationException(
+                        "Unable to establish connection to the database while trying to create table " + tableName, e);
             }
             String isTableExistsQuery = null;
             String createTableQuery = null;
@@ -186,7 +189,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                     stmt.executeUpdate(createTableQuery);
                     con.commit();
                 } catch (SQLException ex) {
-                    log.error("Could not create table " + tableName, ex);
+                    throw new ClusterCoordinationException("Could not create table " + tableName, ex);
                 }
             }
         } finally {
