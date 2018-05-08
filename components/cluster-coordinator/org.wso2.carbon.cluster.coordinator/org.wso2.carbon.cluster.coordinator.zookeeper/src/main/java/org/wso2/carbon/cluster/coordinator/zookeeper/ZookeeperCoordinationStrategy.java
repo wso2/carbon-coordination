@@ -118,7 +118,7 @@ public class ZookeeperCoordinationStrategy implements CoordinationStrategy {
 
     @Override
     public boolean isLeaderNode() {
-        // TODO: 9/15/17
+        // TODO: 9/15/17 Implement method to check if current node is leader node
         return false;
     }
 
@@ -174,7 +174,7 @@ public class ZookeeperCoordinationStrategy implements CoordinationStrategy {
 
     @Override
     public void setPropertiesMap(Map<String, Object> propertiesMap) {
-        // TODO: 9/18/17
+        // TODO: 9/18/17 Implement method to set cluster properties
     }
 
     /**
