@@ -328,6 +328,7 @@
         <apache.curator.imp.package.version>[2.6.0,2.9.0)</apache.curator.imp.package.version>
         <com.h2database.version>1.4.187</com.h2database.version>
         <org.testing.version>6.9.10</org.testing.version>
+        <com.google.imp.package.version>[16.0,17.0)</com.google.imp.package.version>
 
         <mysql.connector.version>5.1.38</mysql.connector.version>
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>

@@ -69,7 +69,7 @@ public class ZookeeperCoordinationServiceComponent {
             ZookeeperCoordinationServiceHolder.setClusterConfiguration(clusterConfiguration);
         } catch (ConfigurationException e) {
             throw new ClusterCoordinationException("Configurations for cluster coordination is not " +
-                    "available in deployment.yaml");
+                    "available in deployment.yaml", e);
         }
         if ((Boolean) clusterConfiguration.get(CoordinationPropertyNames.ENABLED_PROPERTY) &&
                 clusterConfiguration.get(CoordinationPropertyNames.COORDINATION_STRATEGY_CLASS_PROPERTY).

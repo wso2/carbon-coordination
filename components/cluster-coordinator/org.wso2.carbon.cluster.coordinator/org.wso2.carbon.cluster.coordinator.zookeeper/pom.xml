@@ -75,7 +75,7 @@
                             org.wso2.carbon.cluster.coordinator.commons.*;version="${carbon.coordination.version}",
                             org.apache.zookeeper.*;version="${zookeeper.imp.package.version}",
                             org.apache.curator.*;version="${apache.curator.imp.package.version}",
-                            com.google.common.*;version="[16.0,17.0)",
+                            com.google.common.*;version="${com.google.imp.package.version}",
                             org.apache.commons.logging.*;version="${commons.logging.imp.package.version}",
                             *;resolution:=optional
                         </Import-Package>
