@@ -159,7 +159,15 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
 
     @Override
     public List<NodeDetail> getAllNodeDetails() throws ClusterCoordinationException {
-        return communicationBusContext.getAllNodeData(localGroupId);
+        List<NodeDetail> allNodeDetails = communicationBusContext.getAllNodeData(localGroupId);
+        List<NodeDetail> liveNodeDetails = new ArrayList<>();
+        for (NodeDetail nodeDetail : allNodeDetails) {
+            long heartbeatAge = System.currentTimeMillis() - nodeDetail.getLastHeartbeat();
+            if (heartbeatAge < heartbeatMaxRetry) {
+                liveNodeDetails.add(nodeDetail);
+            }
+        }
+        return liveNodeDetails;
     }
 
     @Override
