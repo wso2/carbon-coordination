@@ -45,6 +45,12 @@ public abstract class MemberEventListener {
      */
     public abstract void coordinatorChanged(NodeDetail nodeDetail);
 
+    /**
+     * Invoked when the node is in inactive state.
+     *
+     */
+    public abstract void becameUnresponsive(String nodeId);
+
     public String getGroupId() {
         return this.groupId;
     }

@@ -39,4 +39,9 @@ public class EventListener extends MemberEventListener {
         this.coordinatorChanged.add(nodeDetail);
     }
 
+    @Override
+    public void becameUnresponsive(String nodeId) {
+
+    }
+
 }

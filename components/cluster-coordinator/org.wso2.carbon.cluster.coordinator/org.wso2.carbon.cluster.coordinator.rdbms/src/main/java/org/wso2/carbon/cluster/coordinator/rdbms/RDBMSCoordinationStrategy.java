@@ -154,7 +154,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                     " the id property.");
         }
         this.communicationBusContext = communicationBusContext;
-        this.rdbmsMemberEventProcessor = new RDBMSMemberEventProcessor(localNodeId, communicationBusContext);
+        this.rdbmsMemberEventProcessor = new RDBMSMemberEventProcessor(localNodeId, localGroupId, heartbeatMaxRetry,
+                communicationBusContext);
     }
 
     @Override
@@ -185,7 +186,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
     public boolean isLeaderNode() throws ClusterCoordinationException {
         NodeDetail nodeDetail = communicationBusContext.getNodeData(localNodeId, localGroupId);
         if (nodeDetail == null) {
-            nodeDetail = communicationBusContext.getNodeData(localNodeId, localGroupId);
+            return false;
         }
         return nodeDetail.isCoordinator();
     }
@@ -468,9 +469,15 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                 if (log.isDebugEnabled()) {
                     log.debug("Elected current node as the coordinator in group " + localGroupId);
                 }
+                List<NodeDetail> allNodeInformation = communicationBusContext.getAllNodeData(localGroupId);
+                findAddedRemovedMembers(allNodeInformation, System.currentTimeMillis());
                 nextState = NodeState.COORDINATOR;
                 // notify nodes about coordinator change
-                rdbmsMemberEventProcessor.notifyMembershipEvent(localNodeId, localGroupId, getAllNodeIdentifiers(),
+                List<String> nodeIdentifiers = new ArrayList<>();
+                for (NodeDetail nodeDetail : allNodeInformation) {
+                    nodeIdentifiers.add(nodeDetail.getNodeId());
+                }
+                rdbmsMemberEventProcessor.notifyMembershipEvent(localNodeId, localGroupId, nodeIdentifiers,
                         MemberEventType.COORDINATOR_CHANGED);
             } else {
                 if (log.isDebugEnabled()) {
