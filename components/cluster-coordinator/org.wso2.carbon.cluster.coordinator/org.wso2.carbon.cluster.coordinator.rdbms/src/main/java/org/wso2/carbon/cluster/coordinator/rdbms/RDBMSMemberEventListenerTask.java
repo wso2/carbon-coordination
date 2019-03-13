@@ -38,8 +38,27 @@ class RDBMSMemberEventListenerTask implements Runnable {
     /**
      * Node id of the node for which the reader reads member changes.
      */
-
     private String nodeID;
+
+    /**
+     * Group id of the node for which the reader reads member changes.
+     */
+    private String localGroupId;
+
+    /**
+     * Heart bear max retry time of the node
+     */
+    private int heartbeatMaxRetryTime;
+
+    /**
+     * Time which node has been inactive
+     */
+    private long inactiveHeartbeatAge;
+
+    /**
+     * Time which node become inactive
+     */
+    private long inactiveTimestamp;
 
     /**
      * Communication bus object to communicate with the database for the context store.
@@ -51,10 +70,13 @@ class RDBMSMemberEventListenerTask implements Runnable {
      */
     private List<MemberEventListener> listeners;
 
-    public RDBMSMemberEventListenerTask(String nodeId, RDBMSCommunicationBusContextImpl communicationBusContext) {
+    public RDBMSMemberEventListenerTask(String nodeId, String localGroupId, int heartbeatMaxRetryTime,
+                                        RDBMSCommunicationBusContextImpl communicationBusContext) {
         this.nodeID = nodeId;
+        this.localGroupId = localGroupId;
         this.listeners = new ArrayList<>();
         this.communicationBusContext = communicationBusContext;
+        this.heartbeatMaxRetryTime = heartbeatMaxRetryTime;
     }
 
     /**
@@ -63,6 +85,7 @@ class RDBMSMemberEventListenerTask implements Runnable {
     @Override public void run() {
         try {
             List<MemberEvent> membershipEvents = readMembershipEvents();
+            inactiveTimestamp = 0L;
             if (!membershipEvents.isEmpty()) {
                 for (MemberEvent event : membershipEvents) {
                     switch (event.getMembershipEventType()) {
@@ -88,6 +111,14 @@ class RDBMSMemberEventListenerTask implements Runnable {
             }
         } catch (Throwable e) {
             log.warn("Error occurred while reading membership events. ", e);
+            if (inactiveTimestamp == 0L) {
+                inactiveTimestamp = System.currentTimeMillis();
+            }
+            inactiveHeartbeatAge = System.currentTimeMillis() - inactiveTimestamp;
+            if (inactiveHeartbeatAge > heartbeatMaxRetryTime) {
+                log.warn("Node became unresponsive due to not being able to read events from database");
+                notifyUnresponsiveness(nodeID, localGroupId);
+            }
         }
     }
 
@@ -135,6 +166,19 @@ class RDBMSMemberEventListenerTask implements Runnable {
                 if (nodeDetail != null) {
                     listener.memberAdded(nodeDetail);
                 }
+            }
+        }
+    }
+
+    /**
+     * Notifies the unresponsiveness to registered listeners.
+     *
+     * @param member The node ID of the event occured
+     */
+    private void notifyUnresponsiveness(String member, String groupId) {
+        for (MemberEventListener listener : listeners) {
+            if (listener.getGroupId().equals(groupId)) {
+                listener.becameUnresponsive(member);
             }
         }
     }

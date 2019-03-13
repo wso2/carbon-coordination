@@ -55,12 +55,13 @@ public class RDBMSMemberEventProcessor {
      */
     private RDBMSCommunicationBusContextImpl communicationBusContext;
 
-    public RDBMSMemberEventProcessor(String localNodeId, RDBMSCommunicationBusContextImpl communicationBusContext) {
+    public RDBMSMemberEventProcessor(String localNodeId, String localGroupId, int heartbeatMaxRetry,
+                                     RDBMSCommunicationBusContextImpl communicationBusContext) {
         this.communicationBusContext = communicationBusContext;
         ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("ClusterEventReaderTask-%d").build();
         this.clusterMembershipReaderTaskScheduler = Executors.newSingleThreadScheduledExecutor(namedThreadFactory);
-        addNewListenerTask(localNodeId);
+        addNewListenerTask(localNodeId, localGroupId, heartbeatMaxRetry);
     }
 
     /**
@@ -68,7 +69,7 @@ public class RDBMSMemberEventProcessor {
      *
      * @param nodeId the node ID of the node which starts the listening
      */
-    private void addNewListenerTask(String nodeId) {
+    private void addNewListenerTask(String nodeId, String localGroupId, int heartbeatMaxRetry) {
         StrategyConfig strategyConfiguration = RDBMSCoordinationServiceHolder.getClusterConfiguration().
                 getStrategyConfig();
         int scheduledPeriod;
@@ -79,7 +80,8 @@ public class RDBMSMemberEventProcessor {
                     " deployment.yaml, please check " + CoordinationPropertyNames.CLUSTER_CONFIG_NS +
                     " namespace configurations");
         }
-        membershipListenerTask = new RDBMSMemberEventListenerTask(nodeId, communicationBusContext);
+        membershipListenerTask = new RDBMSMemberEventListenerTask(nodeId, localGroupId, heartbeatMaxRetry,
+                communicationBusContext);
         this.clusterMembershipReaderTaskScheduler.scheduleWithFixedDelay(membershipListenerTask,
                 scheduledPeriod, scheduledPeriod, TimeUnit.MILLISECONDS);
         if (log.isDebugEnabled()) {
