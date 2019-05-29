@@ -96,6 +96,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         COORDINATOR, MEMBER
     }
 
+    private boolean isCoordinatorTasksRunning;
+
     /**
      * Instantiate RDBMSCoordinationStrategy with Datasource configuration read from deployment.yaml
      */
@@ -213,6 +215,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         }
 
         if (!isNodeExist) {
+            isCoordinatorTasksRunning = true;
             this.threadExecutor.execute(new HeartBeatExecutionTask(propertiesMap));
         } else {
             throw new ClusterCoordinationException("Node with ID " + localNodeId + " in group " + localGroupId +
@@ -231,7 +234,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         }
         @Override
         public void run() {
-            while (true) {
+            while (isCoordinatorTasksRunning) {
                 try {
                     coordinatorElectionTask.runCoordinationElectionTask(currentHeartbeatTime);
                     long taskEndedTime = System.currentTimeMillis();
@@ -268,7 +271,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
     }
 
     public void stop() {
-        this.threadExecutor.shutdown();
+        isCoordinatorTasksRunning = false;
         this.rdbmsMemberEventProcessor.stop();
     }
 
