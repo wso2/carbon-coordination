@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import javax.sql.DataSource;
 
@@ -214,10 +213,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         }
 
         if (!isNodeExist) {
-            Future heartbeatExecutionResult = this.threadExecutor.submit(new HeartBeatExecutionTask(propertiesMap));
-            if (heartbeatExecutionResult.isCancelled()) {
-                log.warn("Heart beat execution task has been cancelled.");
-            }
+            this.threadExecutor.execute(new HeartBeatExecutionTask(propertiesMap));
         } else {
             throw new ClusterCoordinationException("Node with ID " + localNodeId + " in group " + localGroupId +
                     " already exists.");
@@ -238,16 +234,15 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             while (true) {
                 try {
                     coordinatorElectionTask.runCoordinationElectionTask(currentHeartbeatTime);
-                    long taskEnddedTime = System.currentTimeMillis();
+                    long taskEndedTime = System.currentTimeMillis();
                     long nextHeartbeatTime = currentHeartbeatTime + heartBeatInterval;
-                    if (taskEnddedTime - nextHeartbeatTime >= 0) {
-                        log.info(currentHeartbeatTime + " heartBeatInterval is " + heartBeatInterval +
+                    if (taskEndedTime - nextHeartbeatTime >= 0) {
+                        log.warn(currentHeartbeatTime + " heartBeatInterval is " + heartBeatInterval +
                                 ". But current Heartbeat is happening after " +
-                                (taskEnddedTime - currentHeartbeatTime) + " millis");
-
+                                (taskEndedTime - currentHeartbeatTime) + " millis");
                     } else {
                         try {
-                            Thread.sleep((nextHeartbeatTime - taskEnddedTime));
+                            Thread.sleep((nextHeartbeatTime - taskEndedTime));
                         } catch (InterruptedException e) {
                             log.error("Exception on HeartBeatExecutionTask thread sleep.");
                         }
