@@ -701,6 +701,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                                          String removedMemberId) throws ClusterCoordinationException {
         Connection connection = null;
         PreparedStatement preparedStatement = null;
+        PreparedStatement clearMembershipEvents = null;
         ResultSet resultSet = null;
         NodeDetail nodeDetail = null;
         try {
@@ -737,31 +738,6 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                 nodeDetail = new NodeDetail(removedMemberId, groupId, false, 0, false,
                         propertiesMap);
             }
-            connection.commit();
-        } catch (SQLException e) {
-            String errMsg = RDBMSConstants.TASK_GET_ALL_QUEUES;
-            throw new ClusterCoordinationException("Error occurred while " + errMsg, e);
-        } catch (ClassNotFoundException e) {
-            throw new ClusterCoordinationException("Error retrieving the removed node data. ", e);
-        } finally {
-            close(resultSet, RDBMSConstants.TASK_GET_ALL_QUEUES);
-            close(preparedStatement, RDBMSConstants.TASK_GET_ALL_QUEUES);
-            close(connection, RDBMSConstants.TASK_GET_ALL_QUEUES);
-        }
-        if (log.isDebugEnabled()) {
-            log.debug(RDBMSConstants.TASK_GET_ALL_QUEUES + " of removed nodes in group "
-                    + StringUtil.removeCRLFCharacters(groupId) + " executed successfully");
-        }
-        return nodeDetail;
-    }
-
-    public void removeRecordsOfRemovedMemberDetails(String nodeId, String groupId,
-                                                     String removedMemberId) {
-        Connection connection = null;
-        PreparedStatement clearMembershipEvents = null;
-
-        try {
-            connection = getConnection();
             clearMembershipEvents = connection
                     .prepareStatement(queryManager.getQuery(QueryConstants.DELETE_REMOVED_MEMBER_DETAIL_FOR_NODE));
             clearMembershipEvents.setString(1, nodeId);
@@ -772,10 +748,19 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
         } catch (SQLException e) {
             String errMsg = RDBMSConstants.TASK_GET_ALL_QUEUES;
             throw new ClusterCoordinationException("Error occurred while " + errMsg, e);
+        } catch (ClassNotFoundException e) {
+            throw new ClusterCoordinationException("Error retrieving the removed node data. ", e);
         } finally {
+            close(resultSet, RDBMSConstants.TASK_GET_ALL_QUEUES);
+            close(preparedStatement, RDBMSConstants.TASK_GET_ALL_QUEUES);
             close(clearMembershipEvents, RDBMSConstants.TASK_GET_ALL_QUEUES);
             close(connection, RDBMSConstants.TASK_GET_ALL_QUEUES);
         }
+        if (log.isDebugEnabled()) {
+            log.debug(RDBMSConstants.TASK_GET_ALL_QUEUES + " of removed nodes in group "
+                    + StringUtil.removeCRLFCharacters(groupId) + " executed successfully");
+        }
+        return nodeDetail;
     }
 
     @Override
