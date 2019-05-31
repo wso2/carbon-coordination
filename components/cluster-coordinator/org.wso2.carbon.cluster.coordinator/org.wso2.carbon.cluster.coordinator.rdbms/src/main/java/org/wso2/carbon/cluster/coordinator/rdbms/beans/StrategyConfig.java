@@ -29,9 +29,9 @@ import java.util.List;
 public class StrategyConfig {
 
     private String datasource;
-    private int heartbeatInterval = 1000;
-    private int heartbeatMaxRetry = 2;
-    private int eventPollingInterval = 1000;
+    private int heartbeatInterval = 5000;
+    private int heartbeatMaxRetry = 3;
+    private int eventPollingInterval = 5000;
 
     @Element(description = "Database query map")
     private List<Queries> queries;

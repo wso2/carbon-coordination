@@ -131,8 +131,13 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                 this.heartBeatInterval = strategyConfiguration.getHeartbeatInterval();
                 // Maximum age of a heartbeat. After this much of time, the heartbeat is considered invalid and node is
                 // considered to have left the cluster.
-                this.heartbeatMaxRetryInterval = heartBeatInterval * strategyConfiguration.getHeartbeatMaxRetry();
                 heartbeatMaxRetry = strategyConfiguration.getHeartbeatMaxRetry();
+                if (heartbeatMaxRetry < 1) {
+                    throw new ClusterCoordinationException("heartbeatMaxRetry configuration should be larger than 0 in" +
+                            " deployment.yaml, please check " + CoordinationPropertyNames.STRATEGY_CONFIG_NS + " under "
+                            + CoordinationPropertyNames.CLUSTER_CONFIG_NS + " namespace configurations");
+                }
+                this.heartbeatMaxRetryInterval = heartBeatInterval * heartbeatMaxRetry;
                 this.heartbeatWarningMargin = heartbeatMaxRetryInterval * 0.75;
                 this.localGroupId = clusterConfiguration.getGroupId();
             } else {
