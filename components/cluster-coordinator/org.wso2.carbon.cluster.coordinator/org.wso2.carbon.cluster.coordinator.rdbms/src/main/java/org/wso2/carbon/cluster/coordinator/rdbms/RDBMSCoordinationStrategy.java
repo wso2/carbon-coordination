@@ -59,6 +59,15 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
      * After this much of time the node is assumed to have left the cluster.
      */
     private final int heartbeatMaxRetryInterval;
+    /**
+     * This is used to give the user a warning when the heartbeat interval exceeds the limit.
+     */
+    private final double heartbeatWarningMargin;
+
+    /**
+     * Heartbeat retry interval.
+     */
+    private final int heartbeatMaxRetry;
 
     /**
      * Thread executor used to run the coordination algorithm.
@@ -123,6 +132,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                 // Maximum age of a heartbeat. After this much of time, the heartbeat is considered invalid and node is
                 // considered to have left the cluster.
                 this.heartbeatMaxRetryInterval = heartBeatInterval * strategyConfiguration.getHeartbeatMaxRetry();
+                heartbeatMaxRetry = strategyConfiguration.getHeartbeatMaxRetry();
+                this.heartbeatWarningMargin = heartbeatMaxRetryInterval * 0.75;
                 this.localGroupId = clusterConfiguration.getGroupId();
             } else {
                 throw new ClusterCoordinationException("Strategy Configurations not found in" +
@@ -138,7 +149,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             throw new ClusterCoordinationException(
                     "Group Id not set in cluster.config in deployment.yaml configuration file");
         }
-        ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
+        ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setPriority(7)
                 .setNameFormat("RDBMSCoordinationStrategy-%d").build();
         this.threadExecutor = Executors.newSingleThreadExecutor(namedThreadFactory);
         try {
@@ -228,31 +239,38 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
      */
     public class HeartBeatExecutionTask implements Runnable {
         private CoordinatorElectionTask coordinatorElectionTask;
-        private long currentHeartbeatTime = System.currentTimeMillis();
+        private long lastHeartbeatFinishedTime;
+
         public HeartBeatExecutionTask(Map<String, Object> propertiesMap) {
             coordinatorElectionTask = new CoordinatorElectionTask(localNodeId, localGroupId, propertiesMap);
         }
+
         @Override
         public void run() {
             while (isCoordinatorTasksRunning) {
                 try {
-                    coordinatorElectionTask.runCoordinationElectionTask(currentHeartbeatTime);
+                    long currentHeartbeatStartedTime = System.currentTimeMillis();
+                    coordinatorElectionTask.runCoordinationElectionTask(currentHeartbeatStartedTime);
                     long taskEndedTime = System.currentTimeMillis();
-                    long nextHeartbeatTime = currentHeartbeatTime + heartBeatInterval;
-                    if (taskEndedTime - nextHeartbeatTime >= 0) {
-                        log.warn(currentHeartbeatTime + " heartBeatInterval is " + heartBeatInterval +
-                                ". But current Heartbeat is happening after " +
-                                (taskEndedTime - currentHeartbeatTime) + " millis");
-                    } else {
-                        try {
-                            Thread.sleep((nextHeartbeatTime - taskEndedTime));
-                        } catch (InterruptedException e) {
-                            log.error("Exception on HeartBeatExecutionTask thread sleep.");
-                        }
+                    if (lastHeartbeatFinishedTime != 0 &&
+                            ((taskEndedTime - (lastHeartbeatFinishedTime + heartBeatInterval))
+                                    >= heartbeatWarningMargin)) {
+                        log.warn("The heartBeatInterval is in " + heartBeatInterval +
+                                " millis with a retry count of " + heartbeatMaxRetry + ". " +
+                                "But current heartbeat has happened after " +
+                                (currentHeartbeatStartedTime - lastHeartbeatFinishedTime) +
+                                " millis from the last heartbeat, and took " +
+                                (taskEndedTime - currentHeartbeatStartedTime) +
+                                " millis to run CoordinationElection on the database at " +
+                                currentHeartbeatStartedTime +
+                                ". Please increase the heartBeat interval or the retry count.");
                     }
-                    currentHeartbeatTime = System.currentTimeMillis();
+                    lastHeartbeatFinishedTime = currentHeartbeatStartedTime;
+                    if (lastHeartbeatFinishedTime + heartBeatInterval - taskEndedTime > 5) {
+                        Thread.sleep(lastHeartbeatFinishedTime + heartBeatInterval - taskEndedTime);
+                    }
                 } catch (Throwable t) {
-                    throw new ClusterCoordinationException("Error occurred while performing coordinator tasks.", t);
+                    log.error("Error occurred while performing coordinator tasks. " + t.getMessage(), t);
                 }
             }
         }
@@ -290,6 +308,11 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         private NodeState currentNodeState;
 
         /**
+         * Previous state of the node.
+         */
+        private NodeState previousNodeState;
+
+        /**
          * Used to uniquely identify a node in the cluster.
          */
         private String localNodeId;
@@ -315,12 +338,14 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             this.localNodeId = nodeId;
             this.localPropertiesMap = propertiesMap;
             this.currentNodeState = NodeState.MEMBER;
+            this.previousNodeState = NodeState.MEMBER;
         }
 
-        public void runCoordinationElectionTask (long currentHeartbeatTime) {
+        public void runCoordinationElectionTask(long currentHeartbeatTime) {
             try {
-                if (log.isDebugEnabled()) {
-                    log.debug("Current node state: " + currentNodeState);
+                if (previousNodeState != currentNodeState) {
+                    log.info("Current node state changed from: " + previousNodeState + " to: " + currentNodeState);
+                    previousNodeState = currentNodeState;
                 }
                 long timeTakenForMemberTasks[] = new long[4];
                 long timeTakenForCoordinatorTasks[] = new long[5];
@@ -334,9 +359,9 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                 }
                 long clusterTaskEndingTime = System.currentTimeMillis();
                 if (log.isDebugEnabled() && clusterTaskEndingTime - currentHeartbeatTime > 1000) {
-                    log.debug(clusterTaskEndingTime + " Cluster task took " +
+                    log.debug("Cluster task took " +
                             (clusterTaskEndingTime - currentHeartbeatTime) + " millis to complete on " +
-                            currentNodeState + " node.");
+                            currentNodeState + " node at " + clusterTaskEndingTime);
                     switch (currentNodeState) {
                         case MEMBER:
                             log.debug(clusterTaskEndingTime +
@@ -351,9 +376,9 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                                     "\nupdateNodeHeartBeat() if still coordinator: " + timeTakenForCoordinatorTasks[1] +
                                     "\ngetAllNodeData() if still coordinator: " + timeTakenForCoordinatorTasks[2] +
                                     "\nfindAddedRemovedMembers() if still coordinator: " +
-                                        timeTakenForCoordinatorTasks[3] +
+                                    timeTakenForCoordinatorTasks[3] +
                                     "\nperformElectionTask() if NOT still coordinator: " +
-                                        timeTakenForCoordinatorTasks[4]);
+                                    timeTakenForCoordinatorTasks[4]);
                             break;
                     }
                 }
@@ -379,15 +404,11 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             taskEndTime = System.currentTimeMillis();
             timeTakenForMemberTasks[0] = taskEndTime - taskStartTime;
             taskStartTime = taskEndTime;
-            boolean coordinatorValid = communicationBusContext.checkIfCoordinatorValid(localGroupId,
+            boolean coordinatorValid = communicationBusContext.checkIfCoordinatorValid(localGroupId, localNodeId,
                     heartbeatMaxRetryInterval, currentHeartbeatTime);
             taskEndTime = System.currentTimeMillis();
             timeTakenForMemberTasks[1] = taskEndTime - taskStartTime;
             if (!coordinatorValid) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Node ID :" + localNodeId
-                            + " Going for election since the Coordinator is invalid for group ID: " + localGroupId);
-                }
                 taskStartTime = taskEndTime;
                 communicationBusContext.removeCoordinator(localGroupId, heartbeatMaxRetryInterval,
                         currentHeartbeatTime);
@@ -443,9 +464,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                 taskEndTime = System.currentTimeMillis();
                 timeTakenForCoordinatorTasks[3] = taskEndTime - taskStartTime;
             } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Going for election since Coordinator state is lost in group " + localGroupId);
-                }
+                log.info("Found current node (nodeId: " + localNodeId + ") being removed from coordinator for " +
+                        "the group " + localGroupId);
                 performElectionTask(currentHeartbeatTime);
                 taskEndTime = System.currentTimeMillis();
                 timeTakenForCoordinatorTasks[4] = taskEndTime - taskStartTime;
@@ -539,10 +559,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             try {
                 this.currentNodeState = tryToElectSelfAsCoordinator(currentHeartbeatTime);
             } catch (ClusterCoordinationException e) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Current node became a " + NodeState.MEMBER + " node in group "
-                            + localGroupId, e);
-                }
+                log.error("Error occurred. Current node became a " + NodeState.MEMBER + " node in group " +
+                        localGroupId + ". " + e.getMessage(), e);
                 this.currentNodeState = NodeState.MEMBER;
             }
         }
@@ -552,19 +570,17 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
          *
          * @return next NodeState
          * @throws ClusterCoordinationException
-         * @throws InterruptedException
          */
         private NodeState tryToElectSelfAsCoordinator(long currentHeartbeatTime)
-                throws ClusterCoordinationException, InterruptedException {
-            NodeState nextState;
+                throws ClusterCoordinationException {
+            NodeState nodeState;
             boolean electedAsCoordinator = communicationBusContext.createCoordinatorEntry(localNodeId, localGroupId);
             if (electedAsCoordinator) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Elected current node as the coordinator in group " + localGroupId);
-                }
+                log.info("Elected current node (nodeID: " + localNodeId + ") as the coordinator for the group " +
+                        localGroupId);
                 List<NodeDetail> allNodeInformation = communicationBusContext.getAllNodeData(localGroupId);
                 findAddedRemovedMembers(allNodeInformation, currentHeartbeatTime);
-                nextState = NodeState.COORDINATOR;
+                nodeState = NodeState.COORDINATOR;
                 // notify nodes about coordinator change
                 List<String> nodeIdentifiers = new ArrayList<>();
                 for (NodeDetail nodeDetail : allNodeInformation) {
@@ -577,9 +593,9 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                     log.debug("Election resulted in current node becoming a " + NodeState.MEMBER
                             + " node in group " + localGroupId);
                 }
-                nextState = NodeState.MEMBER;
+                nodeState = NodeState.MEMBER;
             }
-            return nextState;
+            return nodeState;
         }
 
         /**

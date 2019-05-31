@@ -60,7 +60,7 @@ public interface CommunicationBusContext {
      * @param age     maximum relative age with respect to current time in milliseconds
      * @return True if timed out, False otherwise
      */
-    boolean checkIfCoordinatorValid(String groupId, int age, long currentHeartbeatTime)
+    boolean checkIfCoordinatorValid(String groupId, String nodeId, int age, long currentHeartbeatTime)
             throws ClusterCoordinationException;
 
     /**

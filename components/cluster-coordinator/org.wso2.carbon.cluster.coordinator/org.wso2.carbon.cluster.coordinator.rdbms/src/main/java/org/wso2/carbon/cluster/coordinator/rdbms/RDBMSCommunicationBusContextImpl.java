@@ -416,7 +416,6 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
     public boolean createCoordinatorEntry(String nodeId, String groupId) throws ClusterCoordinationException {
         Connection connection = null;
         PreparedStatement preparedStatement = null;
-
         try {
             connection = getConnection();
             preparedStatement = connection.prepareStatement(queryManager.getQuery(
@@ -501,8 +500,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
     }
 
     @Override
-    public boolean checkIfCoordinatorValid(String groupId, int heartbeatMaxAge, long currentHeartbeatTime)
-            throws ClusterCoordinationException {
+    public boolean checkIfCoordinatorValid(String groupId, String nodeId, int heartbeatMaxAge,
+                                           long currentHeartbeatTime) throws ClusterCoordinationException {
         Connection connection = null;
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
@@ -512,23 +511,22 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                     QueryConstants.GET_COORDINATOR_HEARTBEAT));
             preparedStatement.setString(1, groupId);
             resultSet = preparedStatement.executeQuery();
-            boolean isCoordinator;
+            boolean isCoordinatorValid;
             if (resultSet.next()) {
                 long coordinatorHeartbeat = resultSet.getLong(1);
                 long heartbeatAge = currentHeartbeatTime - coordinatorHeartbeat;
-                isCoordinator = heartbeatAge <= heartbeatMaxAge;
-                if (log.isDebugEnabled()) {
-                    log.debug("isCoordinator: " + isCoordinator + ", heartbeatAge: " + heartbeatMaxAge
-                            + ", coordinatorHeartBeat: " + coordinatorHeartbeat + ", currentTime: "
-                            + currentHeartbeatTime);
+                isCoordinatorValid = heartbeatAge <= heartbeatMaxAge;
+                if (!isCoordinatorValid) {
+                    log.info("Coordinator is invalid, because there is no heartbeat for " + heartbeatAge
+                            + " millis when checked by nodeId: " + nodeId +
+                            ". The heartbeat should have happened in " + heartbeatMaxAge);
                 }
             } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("No coordinator present in database for group " + groupId);
-                }
-                isCoordinator = false;
+                log.info("No valid coordinator present in database for group " + groupId +
+                        " when checked by nodeId: " + nodeId);
+                isCoordinatorValid = false;
             }
-            return isCoordinator;
+            return isCoordinatorValid;
         } catch (SQLException e) {
             String errMsg = RDBMSConstants.TASK_CHECK_COORDINATOR_VALIDITY;
             throw new ClusterCoordinationException("Error occurred while " + errMsg, e);
