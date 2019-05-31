@@ -152,7 +152,6 @@ class RDBMSMemberEventListenerTask implements Runnable {
                 }
             }
         }
-        communicationBusContext.removeRecordsOfRemovedMemberDetails(nodeID, groupId, member);
     }
 
     /**

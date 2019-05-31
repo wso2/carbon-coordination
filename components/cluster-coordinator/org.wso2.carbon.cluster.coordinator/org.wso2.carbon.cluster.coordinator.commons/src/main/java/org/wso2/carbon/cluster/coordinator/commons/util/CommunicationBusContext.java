@@ -50,8 +50,7 @@ public interface CommunicationBusContext {
      * @param groupId local group ID
      * @param nodeId  local node ID
      */
-    boolean updateCoordinatorHeartbeat(String nodeId, String groupId, long currentHeartbeatTime)
-            throws ClusterCoordinationException;
+    boolean updateCoordinatorHeartbeat(String nodeId, String groupId) throws ClusterCoordinationException;
 
     /**
      * Check if the coordinator is timed out using the heart beat value
@@ -60,8 +59,7 @@ public interface CommunicationBusContext {
      * @param age     maximum relative age with respect to current time in milliseconds
      * @return True if timed out, False otherwise
      */
-    boolean checkIfCoordinatorValid(String groupId, int age, long currentHeartbeatTime)
-            throws ClusterCoordinationException;
+    boolean checkIfCoordinatorValid(String groupId, int age) throws ClusterCoordinationException;
 
     /**
      * Remove current Coordinator entry from database
@@ -69,7 +67,7 @@ public interface CommunicationBusContext {
      * @param groupId local group ID
      * @param age     maximum relative age with respect to current time in milliseconds
      */
-    void removeCoordinator(String groupId, int age, long currentHeartbeatTime) throws ClusterCoordinationException;
+    void removeCoordinator(String groupId, int age) throws ClusterCoordinationException;
 
     /**
      * Update Node heartbeat value to current time
@@ -77,8 +75,7 @@ public interface CommunicationBusContext {
      * @param groupId local group ID
      * @param nodeId  local node ID
      */
-    boolean updateNodeHeartbeat(String nodeId, String groupId, long currentHeartbeatTime)
-            throws ClusterCoordinationException;
+    boolean updateNodeHeartbeat(String nodeId, String groupId) throws ClusterCoordinationException;
 
     /**
      * Create Node heartbeat value to current time
