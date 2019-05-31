@@ -144,10 +144,10 @@ class RDBMSMemberEventListenerTask implements Runnable {
      * @param member The node ID of the event occured
      */
     private void notifyMemberRemovalEvent(String member, String groupId) {
-        for (MemberEventListener listener : listeners) {
-            if (listener.getGroupId().equals(groupId)) {
-                NodeDetail nodeDetail = communicationBusContext.getRemovedNodeData(nodeID, groupId, member);
-                if (nodeDetail != null) {
+        NodeDetail nodeDetail = communicationBusContext.getRemovedNodeData(nodeID, groupId, member);
+        if (nodeDetail != null) {
+            for (MemberEventListener listener : listeners) {
+                if (listener.getGroupId().equals(groupId)) {
                     listener.memberRemoved(nodeDetail);
                 }
             }
