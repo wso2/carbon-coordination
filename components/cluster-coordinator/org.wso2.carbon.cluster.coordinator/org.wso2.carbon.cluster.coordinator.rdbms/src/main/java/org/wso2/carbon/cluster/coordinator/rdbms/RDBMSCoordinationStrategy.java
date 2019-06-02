@@ -369,14 +369,16 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                             currentNodeState + " node at " + clusterTaskEndingTime);
                     switch (currentNodeState) {
                         case MEMBER:
-                            log.debug(clusterTaskEndingTime +
+                            log.debug("The time taken to execute tasks in milliseconds at timestamp: " +
+                                    clusterTaskEndingTime +
                                     "\nupdateNodeHeartBeat(): " + timeTakenForMemberTasks[0] +
                                     "\ncheckIfCoordinatorValid(): " + timeTakenForMemberTasks[1] +
                                     "\nremoveCoordinator() if coordinator invalid: " + timeTakenForMemberTasks[2] +
                                     "\nperformElectionTask() if coordinator invalid: " + timeTakenForMemberTasks[3]);
                             break;
                         case COORDINATOR:
-                            log.debug(clusterTaskEndingTime +
+                            log.debug("The time taken to execute tasks in milliseconds at timestamp:" +
+                                    clusterTaskEndingTime +
                                     "\nupdateCoordinatorHeartbeat(): " + timeTakenForCoordinatorTasks[0] +
                                     "\nupdateNodeHeartBeat() if still coordinator: " + timeTakenForCoordinatorTasks[1] +
                                     "\ngetAllNodeData() if still coordinator: " + timeTakenForCoordinatorTasks[2] +
