@@ -271,7 +271,6 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         @Override
         public void run() {
             while (isCoordinatorTasksRunning) {
-                log.info("running the heart beat");
                 try {
                     long currentHeartbeatStartedTime = System.currentTimeMillis();
                     coordinatorElectionTask.runCoordinationElectionTask(currentHeartbeatStartedTime);
