@@ -55,7 +55,7 @@ public class ClusterCoordinationServiceComponent {
                     log.warn("No Coordination Strategy Service Can be Found");
                     Thread.sleep(2000);
                 }
-            } while (coordinationStrategy != null);
+            } while (coordinationStrategy == null);
 
             clusterCoordinator = new ClusterCoordinator(coordinationStrategy);
             if (log.isDebugEnabled()) {
