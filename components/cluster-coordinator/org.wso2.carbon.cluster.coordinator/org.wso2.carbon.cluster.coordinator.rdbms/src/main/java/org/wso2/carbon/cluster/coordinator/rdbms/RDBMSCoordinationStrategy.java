@@ -248,8 +248,13 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                 } catch (ClusterCoordinationException e) {
                     inactivityTime = System.currentTimeMillis();
                     log.error("Node with ID " + localNodeId + " in group " + localGroupId + " could not join to the " +
-                            "cluster due to " + e.getMessage() + " .Will retry in 5 seconds", e);
+                            "cluster due to " + e.getMessage() + " . Will retry in 5 seconds", e);
                     retryClusterJoin = true;
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e1) {
+                        log.error("Error in waiting for cluster join due to " + e1.getMessage(), e);
+                    }
                 }
             }
         } while (retryClusterJoin);

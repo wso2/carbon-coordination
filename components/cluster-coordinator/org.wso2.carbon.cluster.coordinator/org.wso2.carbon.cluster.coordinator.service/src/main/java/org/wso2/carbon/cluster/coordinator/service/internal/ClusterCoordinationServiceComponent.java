@@ -45,24 +45,30 @@ public class ClusterCoordinationServiceComponent {
     private ServiceRegistration<?> serviceRegistration;
 
     @Activate
-    public void start(BundleContext bundleContext) throws Exception {
-        ClusterCoordinator clusterCoordinator = null;
-        CoordinationStrategy coordinationStrategy;
-        do {
-            coordinationStrategy = ClusterCoordinationServiceDataHolder.getCoordinationStrategy();
-            if (null == coordinationStrategy) {
-                log.warn("No Coordination Strategy Service Can be Found");
-            }
-        } while (coordinationStrategy != null);
+    public void start(BundleContext bundleContext) {
+        try {
+            ClusterCoordinator clusterCoordinator = null;
+            CoordinationStrategy coordinationStrategy;
+            do {
+                coordinationStrategy = ClusterCoordinationServiceDataHolder.getCoordinationStrategy();
+                if (null == coordinationStrategy) {
+                    log.warn("No Coordination Strategy Service Can be Found");
+                    Thread.sleep(2000);
+                }
+            } while (coordinationStrategy != null);
 
-        clusterCoordinator = new ClusterCoordinator(coordinationStrategy);
-        if (log.isDebugEnabled()) {
-            log.debug("Coordination Strategy: " + coordinationStrategy.getClass().getName() +
-                    " will be registered as a service");
+            clusterCoordinator = new ClusterCoordinator(coordinationStrategy);
+            if (log.isDebugEnabled()) {
+                log.debug("Coordination Strategy: " + coordinationStrategy.getClass().getName() +
+                        " will be registered as a service");
+            }
+            serviceRegistration = bundleContext.registerService(ClusterCoordinator.class, clusterCoordinator, null);
+            log.info("Cluster Coordinator Service Component Activated with Strategy " +
+                    coordinationStrategy.getClass().getName());
+        } catch (Throwable t) {
+            log.error("Error occurred while activating cluster coordinator service component. " + t.getMessage(), t);
         }
-        serviceRegistration = bundleContext.registerService(ClusterCoordinator.class, clusterCoordinator, null);
-        log.info("Cluster Coordinator Service Component Activated with Strategy " +
-                coordinationStrategy.getClass().getName());
+
     }
 
     @Deactivate
