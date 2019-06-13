@@ -253,7 +253,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                     try {
                         Thread.sleep(5000);
                     } catch (InterruptedException e1) {
-                        log.error("Error in waiting for cluster join due to " + e1.getMessage(), e);
+                        log.error("Error in waiting for cluster join due to " + e1.getMessage(), e1);
                     }
                 }
             }
