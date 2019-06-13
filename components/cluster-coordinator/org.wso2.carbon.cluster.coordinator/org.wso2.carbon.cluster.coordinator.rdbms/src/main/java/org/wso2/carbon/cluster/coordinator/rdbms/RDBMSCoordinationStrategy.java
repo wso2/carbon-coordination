@@ -215,28 +215,50 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
 
     @Override
     public void joinGroup(Map<String, Object> propertiesMap) {
-        //clear old membership events for the node
-        communicationBusContext.clearMembershipEvents(localNodeId, localGroupId);
-        NodeDetail nodeDetail = communicationBusContext.getNodeData(localNodeId, localGroupId);
-        boolean isNodeExist = false;
-        if (nodeDetail != null) {
-            // This check is done to verify if the node details in the database are of an inactive node.
-            // This check would fail if a node goes down and is restarted before the heart beat value expires.
-            // Assumed that this case doesn't happen since node startup time is greater than hear beat value by default.
-            // Restarting the server again so that heart beat values expires will solve this issue.
-            long lastHeartBeat = nodeDetail.getLastHeartbeat();
-            long currentTimeMillis = System.currentTimeMillis();
-            long heartbeatAge = currentTimeMillis - lastHeartBeat;
-            isNodeExist = (heartbeatAge < heartbeatMaxRetryInterval);
-        }
+        boolean retryClusterJoin = false;
+        long inactivityTime = 0L;
+        do {
+            if (System.currentTimeMillis() - inactivityTime >= 5000) {
+                try {
+                    //clear old membership events for the node
+                    communicationBusContext.clearMembershipEvents(localNodeId, localGroupId);
+                    NodeDetail nodeDetail = communicationBusContext.getNodeData(localNodeId, localGroupId);
+                    boolean isNodeExist = false;
+                    boolean stillCoordinator = false;
+                    if (nodeDetail != null) {
+                        // This check is done to verify if the node details in the database are of an inactive node.
+                        // This check would fail if a node goes down and is restarted before the heart
+                        // beat value expires.
+                        long lastHeartBeat = nodeDetail.getLastHeartbeat();
+                        long currentTimeMillis = System.currentTimeMillis();
+                        long heartbeatAge = currentTimeMillis - lastHeartBeat;
+                        isNodeExist = (heartbeatAge < heartbeatMaxRetryInterval);
+                    }
 
-        if (!isNodeExist) {
-            isCoordinatorTasksRunning = true;
-            this.threadExecutor.execute(new HeartBeatExecutionTask(propertiesMap));
-        } else {
-            throw new ClusterCoordinationException("Node with ID " + localNodeId + " in group " + localGroupId +
-                    " already exists.");
-        }
+                    if (isNodeExist) {
+                        log.warn("Node with ID " + localNodeId + " in group " + localGroupId +
+                                " already exists.");
+                        stillCoordinator = communicationBusContext.
+                                updateCoordinatorHeartbeat(localNodeId, localGroupId, System.currentTimeMillis());
+
+                    }
+                    isCoordinatorTasksRunning = true;
+                    retryClusterJoin = false;
+                    this.threadExecutor.execute(new HeartBeatExecutionTask(propertiesMap, stillCoordinator));
+                } catch (ClusterCoordinationException e) {
+                    inactivityTime = System.currentTimeMillis();
+                    log.error("Node with ID " + localNodeId + " in group " + localGroupId + " could not join to the " +
+                            "cluster due to " + e.getMessage() + " . Will retry in 5 seconds", e);
+                    retryClusterJoin = true;
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e1) {
+                        log.error("Error in waiting for cluster join due to " + e1.getMessage(), e1);
+                    }
+                }
+            }
+        } while (retryClusterJoin);
+
     }
 
     /**
@@ -246,8 +268,9 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         private CoordinatorElectionTask coordinatorElectionTask;
         private long lastHeartbeatFinishedTime;
 
-        public HeartBeatExecutionTask(Map<String, Object> propertiesMap) {
-            coordinatorElectionTask = new CoordinatorElectionTask(localNodeId, localGroupId, propertiesMap);
+        public HeartBeatExecutionTask(Map<String, Object> propertiesMap, boolean stillCoordinator) {
+            coordinatorElectionTask = new CoordinatorElectionTask(localNodeId, localGroupId, propertiesMap,
+                    stillCoordinator);
         }
 
         @Override
@@ -338,12 +361,19 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
          * @param nodeId  node ID of the current node
          * @param groupId group ID of the current group
          */
-        private CoordinatorElectionTask(String nodeId, String groupId, Map<String, Object> propertiesMap) {
+        private CoordinatorElectionTask(String nodeId, String groupId, Map<String, Object> propertiesMap,
+                                        boolean stillCoordinator) {
             this.localGroupId = groupId;
             this.localNodeId = nodeId;
             this.localPropertiesMap = propertiesMap;
-            this.currentNodeState = NodeState.MEMBER;
-            this.previousNodeState = NodeState.MEMBER;
+            if (stillCoordinator) {
+                this.currentNodeState = NodeState.COORDINATOR;
+                this.previousNodeState = NodeState.COORDINATOR;
+            } else {
+                this.currentNodeState = NodeState.MEMBER;
+                this.previousNodeState = NodeState.MEMBER;
+            }
+
         }
 
         public void runCoordinationElectionTask(long currentHeartbeatTime) {
