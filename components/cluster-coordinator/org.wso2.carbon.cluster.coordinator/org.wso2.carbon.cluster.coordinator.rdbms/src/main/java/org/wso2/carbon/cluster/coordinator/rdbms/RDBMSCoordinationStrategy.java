@@ -133,9 +133,9 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                 // considered to have left the cluster.
                 heartbeatMaxRetry = strategyConfiguration.getHeartbeatMaxRetry();
                 if (heartbeatMaxRetry < 1) {
-                    throw new ClusterCoordinationException("heartbeatMaxRetry configuration should be larger than 0 in" +
-                            " deployment.yaml, please check " + CoordinationPropertyNames.STRATEGY_CONFIG_NS + " under "
-                            + CoordinationPropertyNames.CLUSTER_CONFIG_NS + " namespace configurations");
+                    throw new ClusterCoordinationException("heartbeatMaxRetry configuration should be larger than 0 in"
+                            + " deployment.yaml, please check " + CoordinationPropertyNames.STRATEGY_CONFIG_NS +
+                            " under " + CoordinationPropertyNames.CLUSTER_CONFIG_NS + " namespace configurations");
                 }
                 this.heartbeatMaxRetryInterval = heartBeatInterval * heartbeatMaxRetry;
                 this.heartbeatWarningMargin = heartbeatMaxRetryInterval * 0.75;
