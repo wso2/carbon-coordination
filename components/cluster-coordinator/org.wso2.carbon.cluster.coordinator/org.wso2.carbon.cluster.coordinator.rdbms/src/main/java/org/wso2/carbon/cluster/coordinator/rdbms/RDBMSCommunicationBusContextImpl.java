@@ -66,6 +66,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
     private static final Log log = LogFactory.getLog(RDBMSCommunicationBusContextImpl.class);
     private static final String POSTGRESQL_DATABASE = "PostgreSQL";
     private static final String MSSQL_DATABASE = "Microsoft SQL Server";
+    private static final String DB2_DATABASE = "DB2";
 
     /**
      * The datasource which is used to be connected to the database.
@@ -117,6 +118,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             DatabaseMetaData metaData = connection.getMetaData();
             databaseType = metaData.getDatabaseProductName();
             databaseVersion = Integer.toString(metaData.getDatabaseMajorVersion());
+            if (databaseType.contains(DB2_DATABASE)) {
+                databaseType = DB2_DATABASE;
+            }
             queryManager = new QueryManager(databaseType, databaseVersion, RDBMSCoordinationServiceHolder.
                     getClusterConfiguration());
         } catch (SQLException e) {
