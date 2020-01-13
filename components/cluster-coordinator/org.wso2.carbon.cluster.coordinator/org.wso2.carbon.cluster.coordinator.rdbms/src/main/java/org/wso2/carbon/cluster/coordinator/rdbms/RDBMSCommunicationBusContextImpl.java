@@ -118,7 +118,9 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             DatabaseMetaData metaData = connection.getMetaData();
             databaseType = metaData.getDatabaseProductName();
             databaseVersion = Integer.toString(metaData.getDatabaseMajorVersion());
-            if (databaseType.contains(DB2_DATABASE)) {
+            // DB2 product name changes with the specific versions(For an example DB2/LINUXX8664, DB2/NT). Hence, checks
+            // whether the product name contains "DB2".
+            if (databaseType.toLowerCase().contains(DB2_DATABASE.toLowerCase())) {
                 databaseType = DB2_DATABASE;
             }
             queryManager = new QueryManager(databaseType, databaseVersion, RDBMSCoordinationServiceHolder.
