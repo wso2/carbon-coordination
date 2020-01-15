@@ -51,6 +51,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import javax.sql.DataSource;
 import javax.sql.rowset.serial.SerialBlob;
@@ -120,7 +121,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             databaseVersion = Integer.toString(metaData.getDatabaseMajorVersion());
             // DB2 product name changes with the specific versions(For an example DB2/LINUXX8664, DB2/NT). Hence, checks
             // whether the product name contains "DB2".
-            if (databaseType.toLowerCase().contains(DB2_DATABASE.toLowerCase())) {
+            if (databaseType.toLowerCase(Locale.ENGLISH).contains(DB2_DATABASE.toLowerCase(Locale.ENGLISH))) {
                 databaseType = DB2_DATABASE;
             }
             queryManager = new QueryManager(databaseType, databaseVersion, RDBMSCoordinationServiceHolder.
