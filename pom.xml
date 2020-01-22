@@ -92,7 +92,7 @@
                 <plugin>
                     <groupId>org.antlr</groupId>
                     <artifactId>antlr4-maven-plugin</artifactId>
-                    <version>4.5.1</version>
+                    <version>4.7.2</version>
                     <executions>
                         <execution>
                             <goals>
@@ -290,7 +290,7 @@
         <carbon.coordination.version>2.1.5-SNAPSHOT</carbon.coordination.version>
         <carbon.coordination.exp.package.version>${carbon.coordination.version}
         </carbon.coordination.exp.package.version>
-        <carbon.analytics-common.version>6.1.1</carbon.analytics-common.version>
+        <carbon.analytics-common.version>6.1.40</carbon.analytics-common.version>
         <carbon.analytics-common.version.range>[6.0.52, 6.2.0)</carbon.analytics-common.version.range>
         <carbon.config.version.range>[2.1.5, 2.2.0)</carbon.config.version.range>
         <org.wso2.carbon.datasource.version.range>[1.0.0, 2.0.0)</org.wso2.carbon.datasource.version.range>
