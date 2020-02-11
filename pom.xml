@@ -290,11 +290,11 @@
         <carbon.coordination.version>2.1.6-SNAPSHOT</carbon.coordination.version>
         <carbon.coordination.exp.package.version>${carbon.coordination.version}
         </carbon.coordination.exp.package.version>
-        <carbon.analytics-common.version>6.1.40</carbon.analytics-common.version>
+        <carbon.analytics-common.version>6.1.42</carbon.analytics-common.version>
         <carbon.analytics-common.version.range>[6.0.52, 6.2.0)</carbon.analytics-common.version.range>
         <carbon.config.version.range>[2.1.5, 2.2.0)</carbon.config.version.range>
         <org.wso2.carbon.datasource.version.range>[1.0.0, 2.0.0)</org.wso2.carbon.datasource.version.range>
-        <hikari.version.range>[2.4.1, 2.5.0)</hikari.version.range>
+        <hikari.version.range>[3.0.0, 3.5.0)</hikari.version.range>
         <jacoco.version>0.7.9</jacoco.version>
 
         <curator.framework.version>2.6.0</curator.framework.version>
@@ -319,7 +319,7 @@
         <maven.findbugsplugin.version>3.0.3</maven.findbugsplugin.version>
 
         <carbon.kernel.version>5.2.0</carbon.kernel.version>
-        <carbon.datasources.version>1.1.2</carbon.datasources.version>
+        <carbon.datasources.version>1.1.8</carbon.datasources.version>
         <commons.logging.version>1.2</commons.logging.version>
         <commons.logging.imp.package.version>[1.2,2.0)</commons.logging.imp.package.version>
         <guava.version>20.0</guava.version>
