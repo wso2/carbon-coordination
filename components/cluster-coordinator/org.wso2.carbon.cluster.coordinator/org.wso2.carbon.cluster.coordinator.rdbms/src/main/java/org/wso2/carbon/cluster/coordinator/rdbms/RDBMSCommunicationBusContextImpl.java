@@ -51,6 +51,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import javax.sql.DataSource;
 import javax.sql.rowset.serial.SerialBlob;
@@ -66,6 +67,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
     private static final Log log = LogFactory.getLog(RDBMSCommunicationBusContextImpl.class);
     private static final String POSTGRESQL_DATABASE = "PostgreSQL";
     private static final String MSSQL_DATABASE = "Microsoft SQL Server";
+    private static final String DB2_DATABASE = "DB2";
 
     /**
      * The datasource which is used to be connected to the database.
@@ -117,6 +119,11 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             DatabaseMetaData metaData = connection.getMetaData();
             databaseType = metaData.getDatabaseProductName();
             databaseVersion = Integer.toString(metaData.getDatabaseMajorVersion());
+            // DB2 product name changes with the specific versions(For an example DB2/LINUXX8664, DB2/NT). Hence, checks
+            // whether the product name contains "DB2".
+            if (databaseType.toLowerCase(Locale.ENGLISH).contains(DB2_DATABASE.toLowerCase(Locale.ENGLISH))) {
+                databaseType = DB2_DATABASE;
+            }
             queryManager = new QueryManager(databaseType, databaseVersion, RDBMSCoordinationServiceHolder.
                     getClusterConfiguration());
         } catch (SQLException e) {
@@ -416,7 +423,6 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
     public boolean createCoordinatorEntry(String nodeId, String groupId) throws ClusterCoordinationException {
         Connection connection = null;
         PreparedStatement preparedStatement = null;
-
         try {
             connection = getConnection();
             preparedStatement = connection.prepareStatement(queryManager.getQuery(
@@ -471,14 +477,15 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
     }
 
     @Override
-    public boolean updateCoordinatorHeartbeat(String nodeId, String groupId) throws ClusterCoordinationException {
+    public boolean updateCoordinatorHeartbeat(String nodeId, String groupId, long currentHeartbeatTime)
+            throws ClusterCoordinationException {
         Connection connection = null;
         PreparedStatement preparedStatementForCoordinatorUpdate = null;
         try {
             connection = getConnection();
             preparedStatementForCoordinatorUpdate = connection
                     .prepareStatement(queryManager.getQuery(QueryConstants.UPDATE_COORDINATOR_HEARTBEAT));
-            preparedStatementForCoordinatorUpdate.setLong(1, System.currentTimeMillis());
+            preparedStatementForCoordinatorUpdate.setLong(1, currentHeartbeatTime);
             preparedStatementForCoordinatorUpdate.setString(2, nodeId);
             preparedStatementForCoordinatorUpdate.setString(3, groupId);
             int updateCount = preparedStatementForCoordinatorUpdate.executeUpdate();
@@ -500,7 +507,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
     }
 
     @Override
-    public boolean checkIfCoordinatorValid(String groupId, int heartbeatMaxAge) throws ClusterCoordinationException {
+    public boolean checkIfCoordinatorValid(String groupId, String nodeId, int heartbeatMaxAge,
+                                           long currentHeartbeatTime) throws ClusterCoordinationException {
         Connection connection = null;
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
@@ -510,24 +518,22 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
                     QueryConstants.GET_COORDINATOR_HEARTBEAT));
             preparedStatement.setString(1, groupId);
             resultSet = preparedStatement.executeQuery();
-            long currentTimeMillis = System.currentTimeMillis();
-            boolean isCoordinator;
+            boolean isCoordinatorValid;
             if (resultSet.next()) {
                 long coordinatorHeartbeat = resultSet.getLong(1);
-                long heartbeatAge = currentTimeMillis - coordinatorHeartbeat;
-                isCoordinator = heartbeatAge <= heartbeatMaxAge;
-                if (log.isDebugEnabled()) {
-                    log.debug("isCoordinator: " + isCoordinator + ", heartbeatAge: " + heartbeatMaxAge
-                            + ", coordinatorHeartBeat: " + coordinatorHeartbeat + ", currentTime: "
-                            + currentTimeMillis);
+                long heartbeatAge = currentHeartbeatTime - coordinatorHeartbeat;
+                isCoordinatorValid = heartbeatAge <= heartbeatMaxAge;
+                if (!isCoordinatorValid) {
+                    log.info("Coordinator is invalid, because there is no heartbeat for " + heartbeatAge
+                            + " millis when checked by nodeId: " + nodeId +
+                            ". The heartbeat should have happened in " + heartbeatMaxAge);
                 }
             } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("No coordinator present in database for group " + groupId);
-                }
-                isCoordinator = false;
+                log.info("No valid coordinator present in database for group " + groupId +
+                        " when checked by nodeId: " + nodeId);
+                isCoordinatorValid = false;
             }
-            return isCoordinator;
+            return isCoordinatorValid;
         } catch (SQLException e) {
             String errMsg = RDBMSConstants.TASK_CHECK_COORDINATOR_VALIDITY;
             throw new ClusterCoordinationException("Error occurred while " + errMsg, e);
@@ -539,13 +545,13 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
     }
 
     @Override
-    public void removeCoordinator(String groupId, int heartbeatMaxAge) throws ClusterCoordinationException {
+    public void removeCoordinator(String groupId, int heartbeatMaxAge, long currentHeartbeatTime)
+            throws ClusterCoordinationException {
         Connection connection = null;
         PreparedStatement preparedStatement = null;
         try {
             connection = getConnection();
-            long currentTimeMillis = System.currentTimeMillis();
-            long thresholdTimeLimit = currentTimeMillis - heartbeatMaxAge;
+            long thresholdTimeLimit = currentHeartbeatTime - heartbeatMaxAge;
             preparedStatement = connection.prepareStatement(queryManager.getQuery(QueryConstants.DELETE_COORDINATOR));
             preparedStatement.setString(1, groupId);
             preparedStatement.setLong(2, thresholdTimeLimit);
@@ -564,7 +570,8 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
     }
 
     @Override
-    public boolean updateNodeHeartbeat(String nodeId, String groupId) throws ClusterCoordinationException {
+    public boolean updateNodeHeartbeat(String nodeId, String groupId, long currentHeartbeatTime)
+            throws ClusterCoordinationException {
         Connection connection = null;
         PreparedStatement preparedStatementForNodeUpdate = null;
 
@@ -572,7 +579,7 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             connection = getConnection();
             preparedStatementForNodeUpdate = connection.prepareStatement(queryManager.getQuery(
                     QueryConstants.UPDATE_NODE_HEARTBEAT));
-            preparedStatementForNodeUpdate.setLong(1, System.currentTimeMillis());
+            preparedStatementForNodeUpdate.setLong(1, currentHeartbeatTime);
             preparedStatementForNodeUpdate.setString(2, nodeId);
             preparedStatementForNodeUpdate.setString(3, groupId);
             int updateCount = preparedStatementForNodeUpdate.executeUpdate();

@@ -56,6 +56,18 @@ public class RDBMSCoordinationServiceComponent {
             clusterConfiguration = RDBMSCoordinationServiceHolder.getConfigProvider().
                     getConfigurationObject(ClusterCoordinatorConfigurations.class);
             if (clusterConfiguration != null) {
+                if (clusterConfiguration.getStrategyConfig().getHeartbeatInterval() < 5000) {
+                    log.warn("It is recommended to have the heartbeatInterval value as " + 5000 +
+                            " milliseconds or higher than the provided " +
+                            clusterConfiguration.getStrategyConfig().getHeartbeatInterval() +
+                            " milliseconds in cluster.config.strategyConfig");
+                }
+                if (clusterConfiguration.getStrategyConfig().getHeartbeatMaxRetry() < 3) {
+                    log.warn("It is recommended to have the heartbeatMaxRetry value as " +
+                            3 + " than provided value " +
+                            clusterConfiguration.getStrategyConfig().getHeartbeatMaxRetry()
+                            + " in cluster.config.strategyConfig");
+                }
                 RDBMSCoordinationServiceHolder.setClusterConfiguration(clusterConfiguration);
             } else {
                 if (log.isDebugEnabled()) {
