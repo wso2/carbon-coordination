@@ -55,7 +55,7 @@ public class RDBMSCoordinationServiceComponent {
         try {
             clusterConfiguration = RDBMSCoordinationServiceHolder.getConfigProvider().
                     getConfigurationObject(ClusterCoordinatorConfigurations.class);
-            if (clusterConfiguration != null) {
+            if (clusterConfiguration != null && clusterConfiguration.isEnabled()) {
                 if (clusterConfiguration.getStrategyConfig().getHeartbeatInterval() < 5000) {
                     log.warn("It is recommended to have the heartbeatInterval value as " + 5000 +
                             " milliseconds or higher than the provided " +
