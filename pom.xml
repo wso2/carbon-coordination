@@ -301,8 +301,8 @@
         <apache.zookeeper.version>3.4.6</apache.zookeeper.version>
         <zookeeper.imp.package.version>[3.4,4.0)</zookeeper.imp.package.version>
         <curator.recipies.version>2.6.0</curator.recipies.version>
-        <org.snakeyaml.version>1.16.0.wso2v1</org.snakeyaml.version>
-        <org.snakeyaml.version.range>[1.17, 2.0)</org.snakeyaml.version.range>
+        <org.snakeyaml.version>2.0.0.wso2v1</org.snakeyaml.version>
+        <org.snakeyaml.version.range>[2.0.0, 3.0.0)</org.snakeyaml.version.range>
 
         <!-- OSGI -->
         <osgi.api.version>6.0.0</osgi.api.version>
