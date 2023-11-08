@@ -24,6 +24,7 @@ import org.wso2.carbon.cluster.coordinator.rdbms.beans.StrategyConfig;
 import org.wso2.carbon.database.query.manager.QueryProvider;
 import org.wso2.carbon.database.query.manager.config.Queries;
 import org.wso2.carbon.database.query.manager.exception.QueryMappingNotAvailableException;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.CustomClassLoaderConstructor;
 import org.yaml.snakeyaml.introspector.BeanAccess;
@@ -79,7 +80,7 @@ public class QueryManager {
 
     private StrategyConfig readYamlContent(InputStream yamlContent) {
         Yaml yaml = new Yaml(new CustomClassLoaderConstructor(StrategyConfig.class,
-                StrategyConfig.class.getClassLoader()));
+                StrategyConfig.class.getClassLoader(), new LoaderOptions()));
         yaml.setBeanAccess(BeanAccess.FIELD);
         return yaml.loadAs(yamlContent, StrategyConfig.class);
     }
