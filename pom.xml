@@ -206,11 +206,32 @@
                 <groupId>org.wso2.carbon.datasources</groupId>
                 <artifactId>org.wso2.carbon.datasource.core</artifactId>
                 <version>${carbon.datasources.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.yaml</groupId>
+                        <artifactId>snakeyaml</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.wso2.carbon.config</groupId>
+                        <artifactId>org.wso2.carbon.config</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon</groupId>
                 <artifactId>org.wso2.carbon.core</artifactId>
                 <version>${carbon.kernel.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.yaml</groupId>
+                        <artifactId>snakeyaml</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.config</groupId>
+                <artifactId>org.wso2.carbon.config</artifactId>
+                <version>${carbon.config.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-logging</groupId>
@@ -292,6 +313,7 @@
         </carbon.coordination.exp.package.version>
         <carbon.analytics-common.version>6.1.42</carbon.analytics-common.version>
         <carbon.analytics-common.version.range>[6.0.52, 6.2.0)</carbon.analytics-common.version.range>
+        <carbon.config.version>2.1.16.2</carbon.config.version>
         <carbon.config.version.range>[2.1.5, 2.2.0)</carbon.config.version.range>
         <org.wso2.carbon.datasource.version.range>[1.0.0, 2.0.0)</org.wso2.carbon.datasource.version.range>
         <hikari.version.range>[3.0.0, 3.5.0)</hikari.version.range>
@@ -301,8 +323,8 @@
         <apache.zookeeper.version>3.4.6</apache.zookeeper.version>
         <zookeeper.imp.package.version>[3.4,4.0)</zookeeper.imp.package.version>
         <curator.recipies.version>2.6.0</curator.recipies.version>
-        <org.snakeyaml.version>1.16.0.wso2v1</org.snakeyaml.version>
-        <org.snakeyaml.version.range>[1.17, 2.0)</org.snakeyaml.version.range>
+        <org.snakeyaml.version>2.0.0.wso2v1</org.snakeyaml.version>
+        <org.snakeyaml.version.range>[2.0.0, 3.0.0)</org.snakeyaml.version.range>
 
         <!-- OSGI -->
         <osgi.api.version>6.0.0</osgi.api.version>
@@ -322,9 +344,9 @@
         <carbon.datasources.version>1.1.8</carbon.datasources.version>
         <commons.logging.version>1.2</commons.logging.version>
         <commons.logging.imp.package.version>[1.2,2.0)</commons.logging.imp.package.version>
-        <guava.version>31.1-jre</guava.version>
-        <guava.bundle.version>31.1.0.jre</guava.bundle.version>
-        <guava.imp.package.version>[31.1.0,32.1.0)</guava.imp.package.version>
+        <guava.version>32.1.3-jre</guava.version>
+        <guava.bundle.version>32.1.3.jre</guava.bundle.version>
+        <guava.imp.package.version>[31.1.0,34.0.0)</guava.imp.package.version>
         <apache.curator.imp.package.version>[2.6.0,2.9.0)</apache.curator.imp.package.version>
         <com.h2database.version>1.4.187</com.h2database.version>
         <org.testing.version>6.9.10</org.testing.version>
