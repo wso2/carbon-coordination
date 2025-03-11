@@ -279,6 +279,12 @@
                 <artifactId>curator-recipes</artifactId>
                 <version>${curator.recipies.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.secvault</groupId>
+                <artifactId>org.wso2.carbon.secvault</artifactId>
+                <version>${carbon.securevault.version}</version>
+                <scope>test</scope>
+            </dependency>
 
             <!-- OSGi Dependencies-->
             <dependency>
@@ -361,7 +367,8 @@
         <maven.compiler.plugin.version>3.5.1</maven.compiler.plugin.version>
         <maven.findbugsplugin.version>3.0.3</maven.findbugsplugin.version>
 
-        <carbon.kernel.version>5.2.12</carbon.kernel.version>
+        <carbon.kernel.version>5.3.1</carbon.kernel.version>
+        <carbon.securevault.version>5.0.20</carbon.securevault.version>
         <carbon.datasources.version>1.1.18</carbon.datasources.version>
         <commons.logging.version>1.2</commons.logging.version>
         <commons.logging.imp.package.version>[1.2,2.0)</commons.logging.imp.package.version>

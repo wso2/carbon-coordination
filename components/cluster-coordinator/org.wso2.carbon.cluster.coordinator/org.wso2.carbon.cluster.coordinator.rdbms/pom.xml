@@ -37,6 +37,11 @@
             <artifactId>org.wso2.carbon.core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wso2.carbon.secvault</groupId>
+            <artifactId>org.wso2.carbon.secvault</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.wso2.orbit.org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
         </dependency>
