@@ -340,7 +340,7 @@
         </carbon.coordination.exp.package.version>
         <carbon.analytics-common.version>6.1.42</carbon.analytics-common.version>
         <carbon.analytics-common.version.range>[6.0.52, 6.2.0)</carbon.analytics-common.version.range>
-        <carbon.config.version>2.1.7</carbon.config.version>
+        <carbon.config.version>2.1.17</carbon.config.version>
         <carbon.config.version.range>[2.1.5, 2.2.0)</carbon.config.version.range>
         <org.wso2.carbon.datasource.version.range>[1.0.0, 2.0.0)</org.wso2.carbon.datasource.version.range>
         <hikari.version.range>[3.0.0, 3.5.0)</hikari.version.range>
